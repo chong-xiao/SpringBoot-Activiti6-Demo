@@ -19,7 +19,8 @@ spring:
     cache: false
   aop:
     proxy-target-class: false
-  activiti:    check-process-definitions: false
+  activiti: 
+    check-process-definitions: false
 
 #log
 logging:
