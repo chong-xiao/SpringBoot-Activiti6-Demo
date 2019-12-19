@@ -1,0 +1,140 @@
+<div class="row" style="padding-top: 15px;">
+    <div class="col-md-12">
+        <div class="bgc-w box">
+            <form action="#" enctype="multipart/form-data" method="post" id="leaveFormHandle">
+                <div class="box-header">
+                    <table class="bo table ">
+                        <tbody>
+                            <tr>
+                                <td colspan="14" class="title">
+                                    <h2>请假申请单</h2>
+                                    <input type="hidden" id="taskId" th:value="${taskId}">
+                                    <input type="hidden" id="LeaveBillId" th:value="${leaveBill.id}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="title"><label class="control-label">请假类型</label></td>
+                                <td colspan="6">
+                                    <div th:switch="${leaveBill.typeId}">
+                                        <p th:case="37">年假</p>
+                                        <p th:case="38">事假</p>
+                                        <p th:case="39">病假</p>
+                                        <p th:case="40">婚假</p>
+                                        <p th:case="41">产假及哺乳假</p>
+                                        <p th:case="42">陪产假</p>
+                                        <p th:case="43">丧假</p>
+                                    </div>
+                                </td>
+                                <td class="title"><span>紧急程度</span></td>
+                                <td colspan="6">
+                                    <div th:switch="${leaveBill.deeply}">
+                                        <p th:case="22">正常</p>
+                                        <p th:case="23">重要</p>
+                                        <p th:case="24">紧急</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="title"><label class="control-label">申请人</label></td>
+                                <td colspan="6">
+                                    <div th:text="${leaveBill.username}">
+                                    </div>
+                                </td>
+                                <td class="title"><label class="control-label">请假天数</label></td>
+                                <td colspan="6">
+                                    <div th:text="${leaveBill.leaveDays}">
+                                    </div>
+                                </td>
+                            </tr>
+                            <!--
+                <tr>
+                    <td class="title"><label class="control-label">开始日期</label></td>
+                    <td colspan="6"><input type="text" class="form-control inpu holistart" name="proId.startTime"></td>
+                    <td class="title"><label class="control-label">结束日期</label></td>
+                    <td colspan="6"><input type="text" class="form-control inpu holiend" name="proId.endTime"></td>
+                </tr>
+                -->
+                            <tr>
+                                <td class="title"><label class="control-label">请假原因</label></td>
+                                <td colspan="8">
+                                    <div th:text="${leaveBill.content}">
+                                    </div>
+                                </td>
+                                <td class="title"><label class="control-label">请假时间</label></td>
+                                <td colspan="4">
+                                    <div th:text="${#dates.format(leaveBill.creatTime, 'yyyy-MM-dd HH:mm:ss')}">
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="bo table ">
+                        <tbody>
+                            <tr>
+                                <td colspan="14" class="title">
+                                    <h4>批注流程</h2>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="12" >
+                                    <textarea class="form-control text" id="handle_comment"></textarea>
+                                    
+                                </td>
+                                <td th:each="outcome:${outcomeList}">
+                                    <input class="btn btn-primary outcome"  type="button" th:value="${outcome}">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="bo table ">
+                        <thead>
+                            <tr>
+                                <td colspan="14" class="title">
+                                    <h4>历史批注信息</h2>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>时间</th>
+                                <th>批注人</th>
+                                <th>批注信息</th>
+                            </tr>
+                        </thead>
+                        <tbody th:each="comment:${commentList}">
+                            <tr>
+                                <td th:text="${#dates.format(comment.time, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                                <td th:text="${comment.userId}"></td>
+                                <td th:text="${comment.fullMessage}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+
+$(function() {
+    $("#leaveFormHandle").on('click', '.outcome', doleaveBillHandle);
+
+});
+
+function doleaveBillHandle(){
+    var outcome = $(this).val()
+    var data = {
+        "taskId": $("#taskId").val(),
+        "outcome": outcome,
+        "message":$("#handle_comment").val(),
+        "LeaveBillId":$("#LeaveBillId").val()
+    }
+    $.post('/workflow/workflow_handler_LeaveBill_submit', data, function(result) {
+            if (result.state == 1) {
+                $("#mainContentId").load("workflow/workflow_handle_list");
+            } else {
+                alert(result.message);
+            }
+    });
+
+}
+
+</script>

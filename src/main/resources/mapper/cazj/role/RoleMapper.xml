@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.RoleDao">
+
+	<resultMap type="com.cazj.common.vo.RoleMenuVo"
+		id="roleMenuVo">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="note" column="note" />
+		<collection property="menuIds" ofType="int" javaType="list">
+			<id column="menuId" />
+		</collection>
+	</resultMap>
+
+	<select id="findObjectById" resultMap="roleMenuVo">
+		SELECT
+		r.id,r.name,r.note,rm.menuId FROM cazj_role r
+		LEFT JOIN cazj_role_menu
+		rm on r.id = rm.roleId
+		WHERE r.id = #{id}
+	</select>
+
+	<!-- 修改角色信息 -->
+	<update id="updateObject" parameterType="com.cazj.pojo.Role">
+		update cazj_role
+		set
+		name=#{name},
+		note=#{note},
+		modifiedName=#{modifiedName},
+		modifiedTime=now()
+		where id=#{id}
+	</update>
+	<!-- 新增角色信息 -->
+	<insert id="insertObject" parameterType="com.cazj.pojo.Role"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into cazj_role
+		(id,name,note,createdTime,modifiedTime,
+		createdName,modifiedName)
+		values
+		(null,#{name},#{note},now(),now(),
+		#{createdName},#{modifiedName})
+	</insert>
+	<!-- sql映射 -->
+	<sql id="queryWhereId">
+		from cazj_role
+		<if test="name != null and name != ''">
+			<where>
+				name like concat("%",#{name},"%")
+			</where>
+		</if>
+	</sql>
+	<!-- 分页查询 -->
+	<select id="findPageRole" resultType="com.cazj.pojo.Role">
+		select *
+		<include refid="queryWhereId" />
+		order by createdTime desc
+		limit #{startIndex}, #{pageSize}
+	</select>
+	<!-- 获取总记录数 -->
+	<select id="getRowCount" resultType="int">
+		select count(*)
+		<include refid="queryWhereId" />
+	</select>
+</mapper>

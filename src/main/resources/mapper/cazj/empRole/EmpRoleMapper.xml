@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.EmpRoleDao">
+	
+	<select id="findRoleIdsByEmpId" resultType="int">
+		select roleId
+		from
+		cazj_emp_role
+		where empId=#{empId}
+	</select>
+	
+	<!-- 删除员工关系数据 -->
+	<delete id="deleteEmpRoleById">
+		delete from cazj_emp_role where empId=#{empId}
+	</delete>
+	
+	<!-- 基于id查询部门 -->
+	<insert id="addEmpRole" >
+		insert into cazj_emp_role
+		(empId,roleId)
+		values
+		<foreach collection="roleIds" separator="," item="roleId">
+			(#{empId},#{roleId})
+		</foreach>
+	</insert>
+	
+</mapper>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.DeptDao">
+
+	<!-- 基于id查询部门 -->
+	<select id="findDeptById" resultType="com.cazj.pojo.Dept">
+		select * from cazj_dept
+		where id=#{id}
+	</select>
+
+	<select id="findZtreeDeptNodes"
+		resultType="com.cazj.common.vo.Node">
+		select id, name, parentId from cazj_dept
+	</select>
+
+	<update id="updateObject">
+		update cazj_dept set
+		name=#{name},sort=#{sort},parentId=#{parentId},
+		modifiedName=#{modifiedName},modifiedTime=now()
+		where id=#{id}
+	</update>
+
+	<insert id="insertObject" parameterType="com.cazj.pojo.Dept">
+		insert into cazj_dept
+		(name,sort,note,parentId,createdTime,modifiedTime,createdName,modifiedName)
+		values
+		(#{name},#{sort},#{note},#{parentId},now(),now(),#{createdName},#{modifiedName})
+	</insert>
+
+	<select id="findObject" resultType="map">
+		select c.*,p.name parentName
+		from
+		cazj_dept c left join cazj_dept p on c.parentId=p.id
+	</select>
+
+	<delete id="deleteObject">
+		delete from cazj_dept where id=#{id}
+	</delete>
+
+	<select id="getChildCount" resultType="int">
+		select count(*) from
+		cazj_dept
+		where parentId=#{id}
+	</select>
+
+</mapper>

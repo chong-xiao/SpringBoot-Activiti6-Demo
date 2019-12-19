@@ -1,0 +1,127 @@
+<!-- Horizontal Form -->
+<div class="box box-info">
+	<div class="box-header with-border">
+		<h3 class="box-title">新增文件</h3>
+	</div>
+	<!-- /.box-header -->
+	<!-- form start -->
+	<form class="form-horizontal">
+		<div class="box-body">
+			<div class="form-group">
+				<label for="nameId" class="col-sm-2 control-label">文件标题</label>
+
+				<div class="col-sm-10">
+					<input type="text" class="form-control" name="name" id="nameId"
+						placeholder="名称">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="noteId" class="col-sm-2 control-label">文件内容</label>
+
+				<div class="col-sm-10">
+					<textarea class="form-control" name="note" id="noteId"
+						placeholder="描述">
+              		</textarea>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label">添加附件</label>
+				<div class="col-sm-10">
+					<ul id="menuTree" class="ztree"></ul>
+				</div>
+			</div>
+		</div>
+		<!-- /.box-body -->
+		<div class="box-footer">
+			<button type="button" class="btn btn-default btn-cancel">Cancel</button>
+			<button type="button" class="btn btn-info btn-save">Save</button>
+			<button type="button" class="btn btn-info pull-right btn-commit">Commit</button>
+		</div>
+		<!-- /.box-footer -->
+	</form>
+</div>
+<!-- <script type="text/javascript" src="bower_components/ztree/jquery.ztree.all.min.js"></script> -->
+<script type="text/javascript">
+    $(function(){
+    	//异步加载菜单信息,初始化页面菜单
+    	$(".box-footer")
+    	.on("click",".btn-save",doSaveOrUpdate)
+    	.on("click",".btn-commit",doCommit)
+    	.on("click",".btn-cancel",doCancel);
+    	
+    });
+    function doCancel(){
+    	var url="files/filepass_list";
+    	$("#mainContentId")
+    	.load(url,function(){
+    	  $("#mainContentId").removeData();
+    	});
+    }
+    function doSaveOrUpdate(){
+    	var params=doGetEditFormData();
+    	var data=$("#mainContentId").data("data");
+    	if(!params.name.trim()){
+    		alert("文件名不能为空");
+    		return;
+    	}
+    	var insertUrl="files/doSaveObject"
+    	var updateUrl="files/doUpdateFile"
+    	var url=data?updateUrl:insertUrl;
+    	$.post(url,params,function(result){
+    		if(result.state==1){
+    			alert(result.message);
+     		   	doCancel();
+    		}else{
+    		   alert(result.message);
+    		}
+    	});
+    }
+    function doCommit(){
+    	var params=doGetEditFormData2();
+    	var data=$("#mainContentId").data("data");
+    	console.log($("#noteId").val());
+    	if(!params.name.trim()){
+    		alert("文件名不能为空");
+    		return;
+    	}
+    	var insertUrl="files/doCommitObject"
+    	var updateUrl="files/doUpdateFile"
+    	var url=data?updateUrl:insertUrl;
+    	$.post(url,params,function(result){
+    		if(result.state==1){
+    			alert(result.message);
+     		   	doCancel();
+    		}else{
+    		    alert(result.message);
+    		}
+    	});
+    }
+    //保存文件
+    function doGetEditFormData(){
+    	var createdUser=$("#loginUserId").text();
+    	var data=$("#mainContentId").data("data");
+    	var id=null
+    	if(data) id=data.id
+    	var params={
+    			"id":id,
+    	    	"name":$("#nameId").val(),
+    	    	"content":$("#noteId").val(),
+    	    	"createdUser":createdUser,
+    	    	"statusId":2
+    	    }
+    	return params;
+    }
+    //提交文件
+    function doGetEditFormData2(){
+    	var createdUser=$("#loginUserId").text();
+    	var data=$("#mainContentId").data("data");
+    	//1.获取文件自身信息
+    	var params={
+    		"name":$("#nameId").val(),
+    		"content":$("#noteId").val(),
+    		"createdUser":createdUser,
+    		"statusId":1
+    	}
+    	return params;
+    }
+</script>

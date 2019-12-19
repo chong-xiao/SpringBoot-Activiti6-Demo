@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.LeaveBillDao">
+
+
+	<insert id="saveLeaveBill"
+		parameterType="com.cazj.pojo.LeaveBill" useGeneratedKeys="true"
+		keyProperty="id">
+		insert into cazj_workflow_leavebill
+		(typeId,deeply,username,leaveDays,content,creatTime,state)
+		values
+		(#{typeId},#{deeply},#{username},#{leaveDays},#{content},now(),0)
+	</insert>
+
+	<update id="updateLeaveBill"
+		parameterType="com.cazj.pojo.LeaveBill">
+		update cazj_workflow_leavebill
+		set
+		typeId=#{typeId},
+		deeply=#{deeply},
+		leaveDays=#{leaveDays},
+		content=#{content}
+		where id =#{id}
+
+	</update>
+
+	<select id="findLeaveBillListByUsername"
+		resultType="com.cazj.pojo.LeaveBill">
+		select * from cazj_workflow_leavebill where username=#{empName}
+	</select>
+	
+	<select id="findLeaveBillList"
+		resultType="com.cazj.pojo.LeaveBill">
+		select * from cazj_workflow_leavebill
+	</select>
+
+	<select id="findLeaveBillById"
+		resultType="com.cazj.pojo.LeaveBill">
+		select * from cazj_workflow_leavebill where
+		id=#{workflowId}
+	</select>
+
+	<update id="deleteLeaveBillById">
+		delete from cazj_workflow_leavebill where
+		id=#{workflowId}
+	</update>
+
+	<update id="changeLeaveBillStateById"
+		parameterType="com.cazj.pojo.LeaveBill">
+		update cazj_workflow_leavebill
+		set
+		typeId=#{typeId},
+		deeply=#{deeply},
+		leaveDays=#{leaveDays},
+		content=#{content},
+		state=#{state}
+		where id =#{id}
+
+	</update>
+
+</mapper>

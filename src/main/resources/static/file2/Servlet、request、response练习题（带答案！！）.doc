@@ -1,0 +1,179 @@
+** Servlet练习题
+** 单选题
+----------------------------------------------------
+1、假设在helloapp应用中有一个hello.jsp，它的文件路径如下：[tomcat根目录]/webapps/helloapp/hello/hello.jsp 在web.xml文件中没有对hello.jsp作任何配置，那么浏览器端访问hello.jsp的URL是什么？（C）
+	A.http://localhost:8080/hello.jsp
+	B.http://localhost:8080/helloapp/hello.jsp
+	C.http://localhost:8080/helloapp/hello/hello.jsp
+	D.http://localhost:8080/hello
+2、	假设在helloapp应用中有一个HelloServlet类，它位于com.tedu包中，那么这个类的.class文件的存放路径应该是什么？（D）
+	A.helloapp/HelloServlet.class
+	B.helloapp/WEB-INF/HelloServlet.class
+	C.helloapp/WEB-INF/classes/HelloServlet.class
+	D.helloapp/WEB-INF/classes/com/tedu/HelloServlet.class
+3、假设在helloapp应用中有一个com.tedu.HelloServlet类，它在web.xml文件中的配置如下：
+	<servlet>
+		<servlet-name>HelloServlet</servlet-name>
+		<servlet-class>com.tedu.HelloServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>HelloServlet</servlet-name>
+		<url-pattern>/hello</url-pattern>
+	</servlet-mapping>
+	那么在浏览器访问HelloServlet的URL是什么？（D）
+	A.http://localhost:8080/HelloServlet
+	B.http://localhost:8080/helloapp/HelloServlet
+	C.http://localhost:8080/helloapp/com/tedu/hello
+	D.http://localhost:8080/helloapp/hello
+4、在J2EE中，对于HttpServlet类的描述，错误的是？（A）
+	A.我们自己编写的Servlet继承了HttpServlet类，一定需覆盖doPost或者doGet方法。
+	B.Httpservlet类扩展了GenericServlet类，实现了GenericServlet类的抽象方法。
+	C.HttpServlet类中处理客户请求和响应时所使用的两个接口是：HttpServletRequest和HttpServletResponse。
+	D.我们自己编写的servlet继承了Httpservlet类，一般只需要覆盖doPost或doGet方法，不必覆盖servive（）方法，因为一个service（）方法会调用doPost或者doGet方法。
+5、完整的配置一个Servlet需要_____标签（B） 
+	A.<webapp></webapp>
+	B.<servlet></servlet>和<servlet-mapping></servlet-mapping>
+	C.<servlet-name/>和<servlet-class>
+	D.<servlet-mapping>和<servlet-name>
+6、在J2EE中，给定某Servlet的代码如下，编译运行该文件，以下陈述正确的是（B）（单选）
+	public class Servlet1 extends HttpServlet{
+	    public void service(HttpServletRequest request,HttpServletResponse response)
+			throws ServletException,IOException{
+			PrintWriter  out = response.getWriter();
+			out.println("hello!");
+		}
+	}  
+	A.编译该文件时会提示缺少doGet()或者dopost()方法，编译不能够成功通过  
+	B.编译后，把Servlet1.class放在正确位置，运行该Servlet，在浏览器中会看到输出文字：hello!  
+	C.编译后，把Servlet1.class放在正确位置，运行该Servlet，在浏览器中看不到任何输出的文字  
+	D.编译后，把Servlet1.class放在正确位置，运行该Servlet,在浏览器中会看到运行期错误信息  
+7、在访问Servlet时，在浏览器地址栏中输入的路径是在__地方配置的。（D）
+	A.<servlet-name/>
+	B.<servlet-mapping/>
+	C.<uri-pattern/>
+	D.<url-pattern/>
+8、在Servlet生命周期方法中，每当有请求访问Servlet时，web容器会调用（）方法处理请求。(B)
+	A.init  
+	B.service
+	C.doGet或者doPost 
+	D.destroy
+
+9、请求Servlet的时候，Servlet的对象由____?（A）  
+	A.服务器负责实例化  
+	B.由开发人员在请求中实例化  
+	C.Servlet会自动实例化  
+	D.Servlet只加载，无需实例化 
+----------------------------------------------------
+** 多选题
+----------------------------------------------------
+10、有关Servlet的生命周期说法正确的有？（CD） 
+	A.Servlet的生命周期由Servlet实例控制  
+	B.init()方法在创建完Servlet实例后, 由开发人员调用该方法进行初始化。
+	C.调用service()方法处理客户端发出的请求  
+	D.调用destroy()方法进行善后的处理。
+!!11、在J2EE中，当用在户浏览器中输入：http://localhost:8080/myweb/stu ,就会调用cn.tedu包中名为student的Servlet,在web.xml中配置关于servlet配置中url-pattern正确的是？（AB）
+	A./stu
+	B./myweb/stu
+	C.cn.tedu.stu
+
+====================================================
+** Request、Response练习题
+** 单选题
+----------------------------------------------------
+13.Servlet要从请求中获得请求参数，应该调用哪个方法？（C）
+	A.调用HttpServletRequest对象的getAttribute()方法
+	B.调用HttpServlet对象的getAttribute()方法
+	C.调用HttpServletRequest对象的getParameter()方法
+	D.调用HttpServletRequest对象的getHeader()方法
+14.关于request域的说法不正确的是？（D）
+	A.request域作用范围为整个请求链
+	B.request域的生命周期为：在服务器针对一次请求创建出request对象后生命周期开始，在响应结束后request对象销毁，生命周期结束。
+	C.request作用范围为整个请求链，因此常常在请求转发时由一个servlet（或jsp）向另一个servlet（或jsp）传递属性。
+	D.通过request的getAttribute方法可以获取到浏览器发送过来的请求参数。
+15、在ServletA 的doGet方法中的代码片段，如下：
+	request.setAttribute("name","zhang");
+	response.sendRedirect("http://localhost:8080/servlet/MyServlt");
+	那么在 MyServlet 中可以使用____方法把属性 name的值取出来。（D）
+	A.String str = request.getAttribute("name");
+	B.String str = (String)request.getAttribute("name");
+	C.Object str = request.getAttribute("name");
+	D.无法取出来
+16.request对象的____方法能够获取request域中属性的值。(D)
+	A.getQuaryString()
+	B.getPathInfo()
+	C.getParameter()
+	D.getAttribute()
+17.用户使用POST方式提交的数据中存在汉字（使用GBK字符集），在Servlet中需要使用下面__个语句处理。（A）
+	A.request.setCharcterEncoding("GBK");
+	B.request.setContentType("text/html;charset=GBK");
+	C.response.setCharcterEncoding("GBK");
+	D.response.setContentType("text/html;charset=GBK");
+18.设在表单中有一组复选钮标记，如下列代码： （C）
+    <form action="/Hello/HelloServlet">
+    	<input type="checkbox" name="like" value="basketball">篮球
+    	<input type="checkbox" name="like" value="football">足球
+   		<input type="checkbox" name="like" value="volleyball">排球
+   		...
+	</form>
+    选中篮球、足球，提交表单，在HelloServlet中取like的值，获取的方法为____（C）
+	A.String likes = request.getParameter("like");
+    B.String []likes = request.getParameter("like");
+    C.String []likes = request.getParameterValues("like");
+    D.String likes = request.getAttribute("like");
+19.Servlet中，HttpServletResponse的（）方法用来把一个Http请求重定向到另外的URL（C）
+	A.sendURL()  
+	B.redirectURL()
+	C.sendRedirect()   
+	D.redirectResponse()
+20.HttpServletRequest和HttpServletResponse对象什么时候创建?（C）
+	A.Servlet被实例化之后立即创建request和response
+	B.init方法被调用前创建request和response
+	C.service方法执行前创建request和response
+	D.请求结束后创建request和response
+
+----------------------------------------------------
+** 多选题
+----------------------------------------------------
+21.下列关于说法中，正确的说法是？（BCD）
+	A.通过浏览器发送给服务器参数，在Servlet中可以通过request.getAttribute方法获取。
+	B.许多乱码都是由于编解码时码表不一致产生的，所以应该尽力保编码的一致，防止乱码产生。
+	C.request.setCharacterEconding方法是用来设置请求实体内容的编码，因此只对POST乱码有效，而GET方式提交的参数是附加在URL后的并，不在请求的实体内容中。
+	D.对于GET方式提交的请求参数，tomcat8.0及以上版本已经做了处理，tomcat8.0以下的版本可以在tomcat服务器中的server.xml文件中的<Connection>标签上添加URIEncoding="utf-8"解决。
+
+22.下列说法正确的是？（AB）
+	A.请求转发是服务器端技术，与浏览器没有任何关系，浏览器并不知道获得的响应消息是否是经过转发得到的。
+	B.请求转发前后的request对象是同一个，因此可以通过request中的map在转发前携带到转发的目的地中
+	C.请求转发是两次请求，两次响应，因此请求转发时，request对象无法传递数据。
+	D.重定向是一次请求，一次响应，因此在重定向前后的两个资源中，response对象可以传递数据。
+
+23.关于request和response下列说法中正确的是？（AC）
+	A.javaweb开发是基于HTTP协议进行的，javaweb中使用request代表请求对象，response代表响应对象
+	B.request对象代表请求，response对象代表响应，这两个对象都是由浏览器创建后发送给服务器的
+	C.HTTP协议只规定了浏览器和服务器之间如何通信，而request和response对象是由javaee规范规定的、由javaweb容器负责创建的。
+
+24.服务器通过字符流响应数据给客户端浏览器，浏览器收到数据后出现乱码，Servlet中doGet()方法代码如下：
+	response.getWriter().write("中国");
+	而此时浏览器收到的数据是："??"
+	根据上述描述判断下面说法正确的是？（ABD）
+	A.出现乱码的原因是因为编解码时使用的码表不一致造成的。
+	B.出现乱码是因为服务器发送数据时查的是ISO8859-1码表，而该码表中没有中文导致的。
+	C.可以通过response.setContentType("text/html,charset=utf-8");来解决乱码
+	D.可以通过response.setContentType("text/html;charset=utf-8");来解决乱码
+
+25.对于ServletRequest接口的获取请求参数的方法的描述__是错误的。（ABD）
+	A.getParameter方法只用于接收POST请求参数，接收GET请求参数需要使用getQueryString方法 
+	B.如果一个参数key有多个值，那么getParameter(key)方法会返回空
+	C.如果一个参数key有多个值，那么getParameterValues(key)方法会返回一个包含所有值的字符串数组
+	D.getParameter方法返回Object对象，使用前要强制类型转换，如：String str=(String) request.getParameter(key);
+
+26.request的功能有哪些? (ABD)
+	A.实现请求参数
+	B.实现请求转发
+	C.在多次请求中传递的数据
+	D.作为域对象使用
+27.response对象是对服务器的响应信息作出的封装对象。其主要作用有：(ABD)
+	A.可以向客户端输出信息
+	B.可以实现请求重定向
+	C.可以作为域对象实现资源共享
+	D.可以设置响应头和状态码
+	

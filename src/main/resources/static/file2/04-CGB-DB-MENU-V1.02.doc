@@ -1,0 +1,983 @@
+              1	菜单管理设计说明
+1.1	业务设计说明
+菜单管理又称为资源管理，是系统资源对外的表现形式。本模块主要是实现对菜单进行添加、修改、查询、删除等操作。其表设计语句如下：
+CREATE TABLE `sys_menus` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) DEFAULT NULL COMMENT '资源名称',
+  `url` varchar(200) DEFAULT NULL COMMENT '资源URL',
+  `type` int(11) DEFAULT NULL COMMENT '类型     1：菜单   2：按钮',
+  `sort` int(11) DEFAULT NULL COMMENT '排序',
+  `note` varchar(100) DEFAULT NULL COMMENT '备注',
+  `parentId` int(11) DEFAULT NULL COMMENT '父菜单ID，一级菜单为0',
+  `permission` varchar(500) DEFAULT NULL COMMENT '授权(如：sys:user:create)',
+  `createdTime` datetime DEFAULT NULL COMMENT '创建时间',
+  `modifiedTime` datetime DEFAULT NULL COMMENT '修改时间',
+  `createdUser` varchar(20) DEFAULT NULL COMMENT '创建用户',
+  `modifiedUser` varchar(20) DEFAULT NULL COMMENT '修改用户',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='资源管理';
+菜单表与角色表是多对多的关系，在表设计时，多对多关系通常由中间表进行维护，如图-1所示：
+ 
+图-1
+基于对表的设计，其数据逻辑关系的展示，如图-2所示：
+ 
+图-2
+菜单与角色的关系表脚本设计如下：
+CREATE TABLE `sys_role_menus` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `role_id` int(11) DEFAULT NULL COMMENT '角色ID',
+  `menu_id` int(11) DEFAULT NULL COMMENT 'ID',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1250 DEFAULT CHARSET=utf8 COMMENT='角色与菜单对应关系';
+1.2	原型设计说明
+基于用户需求，实现菜单静态页面(html/css/js)，通过静态页面为用户呈现菜单模块的基本需求实现。
+当在主页点击菜单管理时，呈现菜单列表页面，如图-3所示。
+ 
+图-3
+在列表页面点击添加按钮时，呈现菜单编辑页面,如图-4所示.
+ 
+图-4
+在菜单编辑页面选择上级菜单时，以树结构呈现上级菜单，如图-5所示。
+
+ 
+图-5
+说明:假如客户对此原型进行了确认,后续则可以基于此原型进行研发。
+1.3	API设计说明
+菜单管理业务后台API分层架构及调用关系如图-6所示：
+ 
+图-6
+说明：分层目的主要将复杂问题简单化，实现各司其职，各尽所能。
+2	菜单管理列表页面呈现
+2.1	服务端实现
+2.1.1	Controller实现
+	业务描述与设计实现
+基于菜单管理的请求业务，在PageController中添加doMenuUI方法，用于返回菜单列表页面。
+	关键代码设计与实现
+第一步：在PageController中定义返回菜单列表的方法。代码如下：
+@RequestMapping("menu/menu_list")
+public String doMenuUI() {
+	return "sys/menu_list";
+}
+第二步：在PageController中优化返回UI页面的方法。找出共性进行提取，例如：
+@RequestMapping("{module}/{moduleUI}")
+public String doModuleUI(@PathVariable String moduleUI) {
+		return "sys/"+moduleUI;
+}
+2.2	客户端实现
+2.2.1	首页菜单事件处理
+	业务描述与设计实现
+首先准备菜单列表页面(/templates/pages/sys/menu_list.html)，然后在starter.html页面中点击菜单管理时异步加载菜单列表页面。
+	关键代码设计与实现
+找到项目中的starter.html 页面，页面加载完成以后，注册菜单管理项的点击事件，当点击菜单管理时，执行事件处理函数。关键代码如下：
+$(function(){
+     doLoadUI("load-menu-id","menu/menu_list")
+})
+function doLoadUI(id,url){
+ 	$("#"+id).click(function(){
+    		$("#mainContentId").load(url);
+    	});
+}
+其中，load函数为jquery中的ajax异步请求函数。
+2.2.2	菜单列表页面
+	业务描述与设计实现
+本页面呈现菜单信息时要以树结构形式进行呈现。此树结构会借助jquery中的treeGrid插件进行实现，所以在列表页面需要引入treeGrid相关JS。但是，具体的treeGrid怎么用可自行在网上进行查询（已比较成熟）。
+	关键代码设计与实现：
+关键JS引入，代码如下：
+<script type="text/javascript" src="bower_components/treegrid/jquery.treegrid.extension.js"></script>
+<script type="text/javascript" src="bower_components/treegrid/jquery.treegrid.min.js"></script>
+<script type="text/javascript" src="bower_components/treegrid/tree.table.js"></script>
+
+
+3	菜单管理列表数据呈现
+3.1	数据架构分析
+菜单列表页面加载完成，启动菜单数据异步加载操作，本次菜单列表页面要呈现菜单以及上级菜单信息，其数据查询时，数据的封装及传递过程，如图-7所示。
+ 
+图-7
+说明：本模块将从数据库查询到的菜单数据封装到map对象，一行记录一个map对象，其中key为表中的字段(列)名，值为字段(列)对应的值。
+3.2	服务端关键业务及代码实现
+3.2.1	Dao接口实现
+	业务描述及设计实现
+通过数据层对象，基于业务层参数，查询菜单以及上级菜单信息(要查询上级菜单名)。 
+	关键代码分析及实现：
+第一步：定义数据层接口对象，通过此对象实现数据库中菜单数据的访问操作。关键代码如下：
+@Mapper
+public interface SysMenuDao {
+}
+第二步：在SysMenuDao接口中添加findObjects方法，基于此方法实现菜单数据的查询操作。代码如下：
+	List<Map<String,Object>> findObjects();
+说明：
+3.2.2	Mapper文件实现
+	业务描述及设计实现
+基于Dao接口创建映射文件，在此文件中通过相关元素(例如select)描述要执行的数据操作。
+	关键代码设计及实现
+第一步：在映射文件的设计目录中添加SysMenuMapper.xml映射文件，代码如下：
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysMenuDao">
+  
+</mapper>
+第二步：在映射文件中添加id为findObjects元素，实现分页查询。关键代码如下：
+<select id="findObjects" resultType="map">
+         
+          <!-- 方案1
+          select c.*,p.name parentName
+          from sys_menus c left join sys_menus p
+          on c.parentId=p.id 
+          -->
+          <!-- 方案2 -->
+          select c.*,(
+                    select p.name 
+                    from sys_menus p
+                    where c.parentId=p.id
+                    ) parentName
+          from sys_menus c
+         
+ </select>
+
+说明：自关联查询分析，如图-8所示：
+ 
+图-8
+3.2.3	Service接口及实现类
+	业务描述与设计实现
+在菜单查询中，业务层对象主要是借助数据层对象完成菜单数据的查询。后续还可以基于AOP对数据进行缓存，记录访问日志等。
+	关键代码设计及实现
+第一步：定义菜单业务接口及方法，暴露外界对菜单业务数据的访问，其代码参考如下：
+package com.cy.pj.sys.service;
+public interface SysMenuService {
+	 List<Map<String,Object>> findObjects();
+}
+    第二步：定义菜单业务接口实现类，并添加菜单业务数据对应的查询操作实现,其代码参考如下：
+package com.cy.pj.sys.service.impl;
+@Service
+public class SysMenuServiceImpl implements SysMenuService{
+	  @Autowired
+      private SysMenuDao sysMenuDao;
+	  @Override
+	  public List<Map<String, Object>> findObjects() {
+		List<Map<String,Object>> list=
+			sysMenuDao.findObjects();
+		if(list==null||list.size()==0)
+		throw new ServiceException("没有对应的菜单信息");
+		return list;
+	  }
+3.2.4	Controller类实现
+	业务描述与设计实现
+控制层对象主要负责请求和响应数据的处理，例如，本模块通过业务层对象执行业务逻辑，再通过VO对象封装响应结果(主要对业务层数据添加状态信息)，最后将响应结果转换为JSON格式的字符串响应到客户端。
+	关键代码设计与实现
+定义Controller类，并将此类对象使用Spring框架中的@Controller注解进行标识，表示此类对象要交给Spring管理。然后基于@RequestMapping注解为此类定义根路径映射。代码参考如下：
+package com.cy.pj.sys.controller;
+@RestController
+@RequestMapping("/menu/")
+public class SysMenuController {
+}
+在Controller类中添加菜单查询处理方法，代码参考如下：
+@RequestMapping("doFindObjects")
+public JsonResult doFindObjects() {
+	return new JsonResult(sysMenuService.findObjects());
+}
+
+3.3	客户端关键业务及代码实现
+3.3.1	菜单列表信息呈现
+	业务描述与设计实现
+菜单页面加载完成以后，向服务端发起异步请求加载菜单信息，当菜单信息加载完成需要将菜单信息呈现到列表页面上。
+	关键代码设计与实现
+第一步：在菜单列表页面，定义菜单列表配置信息，关键代码如下：
+var columns = [
+{
+	field : 'selectItem',
+	radio : true
+},
+{
+	title : '菜单ID',
+	field : 'id',
+	align : 'center',
+	valign : 'middle',
+	width : '80px'
+},
+{
+	title : '菜单名称',
+	field : 'name',
+	align : 'center',
+	valign : 'middle',
+	width : '130px'
+},
+{
+	title : '上级菜单',
+	field : 'parentName',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '100px'
+},
+{
+	title : '类型',
+	field : 'type',
+	align : 'center',
+	valign : 'middle',
+	width : '70px',
+	formatter : function(item, index) {
+		if (item.type == 1) {
+			return '<span class="label label-success">菜单</span>';
+		}
+		if (item.type == 2) {
+			return '<span class="label label-warning">按钮</span>';
+		}
+	}
+}, 
+{
+	title : '排序号',
+	field : 'sort',
+	align : 'center',
+	valign : 'middle',
+	sortable : true,
+	width : '70px'
+}, 
+{
+	title : '菜单URL',
+	field : 'url',
+	align : 'center',
+	valign : 'middle',
+
+	width : '160px'
+}, 
+{
+	title : '授权标识',//要显示的标题名称
+	field : 'permission',//json串中的key
+	align : 'center',//水平居中
+	valign : 'middle',//垂直居中
+	sortable : false //是否排序
+} ];//格式来自官方demos -->treeGrid(jquery扩展的一个网格树插件)
+第二步：定义异步请求处理函数，代码参考如下：
+function doGetObjects(){//treeGrid
+	$("#mainContentId").removeData();
+	//1.构建table对象(bootstrap框架中treeGrid插件提供)
+	var treeTable=new TreeTable(
+			"menuTable",//tableId
+			"menu/doFindObjects",//url
+			 columns);
+	//设置从哪一列开始展开(默认是第一列)
+	//treeTable.setExpandColumn(2);
+	//2.初始化table对象(底层发送ajax请求获取数据)
+	treeTable.init();//getJSON,get(),...
+}
+第三步：页面加载完成，调用菜单查询对应的异步请求处理函数，关键代码如下：
+$(function(){
+	doGetObjects();
+})
+4	菜单管理删除操作实现
+4.1	核心业务分析
+基于用户在列表页面上选择的的菜单记录ID，执行删除操作，本次删除业务实现中，首先要基于id判断当前菜单是否有子菜单，假如有子菜单则不允许删除，没有则先删除菜单角色关系数据，然后再删除菜单自身信息。
+4.2	服务端关键业务及代码实现
+4.2.1	Dao接口实现
+	业务描述及设计实现
+数据层基于业务层提交的菜单记录id，删除菜单角色关系以及菜单数据，菜单自身记录信息。
+	关键代码设计及实现：
+第一步：在创建SysRoleMenuDao并定义基于菜单id删除关系数据的方法，关键代码如下：
+public interface SysRoleMenuDao {
+	int deleteObjectsByMenuId(Integer menuId);
+}
+第二步：在SysMenuDao中添加基于菜单id查询子菜单记录的方法。代码参考如下：
+int getChildCount(Integer id);
+第三步：在SysMenuDao中添加基于菜单id删除菜单记录的方法。代码参考如下：
+int deleteObject(Integer id);
+4.2.2	Mapper文件实现
+	业务描述及设计实现
+在SysRoleMenuDao,SysMenuDao接口对应的映射文件中添加用于执行删除业务的delete元素，然后在元素内部定义具体的SQL实现。
+	关键代码设计与实现
+第一步：创建SysRoleMenuMapper.xml文件并添加基于菜单id删除关系数据的元素，关键代码如下：
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysRoleMenuDao">
+       <delete id="deleteObjectsByMenuId"
+             parameterType="int">
+          delete from sys_role_menus
+          where menu_id=#{menuId}
+     </delete>
+</mapper>
+第二步：在SysMenuMapper.xml文件中添加基于id统计子菜单数量的元素，关键代码如下：
+<select id="getChildCount"
+             parameterType="int"
+             resultType="int">
+          select count(*)
+          from sys_menus
+          where parentId=#{id}        
+ </select>
+第三步：在SysMenuMapper.xml文件添加delete元素,基于带单id删除菜单自身记录信息，关键代码如下：
+
+    <delete id="deleteObject">
+       delete from sys_menus
+       where id =#{id}
+       
+    </delete>
+4.2.3	Service接口及实现类
+	业务描述与设计实现
+在菜单业务层定义用于执行菜单删除业务的方法，首先通过方法参数接收控制层传递的菜单id，并对参数id进行校验。然后基于菜单id统计子菜单个数，假如有子菜单则抛出异常，提示不允许删除。假如没有子菜单，则先删除角色菜单关系数据。最后删除菜单自身记录信息后并返回业务执行结果。
+	关键代码设计与实现
+第一步：在SysMenuService接口中，添加基于id进行菜单删除的方法。关键代码如下：
+int deleteObject(Integer id);
+第二步：在SysMenuServiceImpl实现类中注入SysRoleMenuDao相关对象。关键代码如下：
+@Autowired
+private SysRoleMenuDao sysRoleMenuDao;
+第二步：在SysMenuServiceImpl实现类中添加删除业务的具体实现。关键代码如下：
+	@Override
+	public int deleteObject(Integer id) {
+		//1.验证数据的合法性
+		if(id==null||id<=0)
+		throw new IllegalArgumentException("请先选择");
+		//2.基于id进行子元素查询
+		int count=sysMenuDao.getChildCount(id);
+		if(count>0)
+		throw new ServiceException("请先删除子菜单");
+		//3.删除角色,菜单关系数据
+		sysRoleMenuDao.deleteObjectsByMenuId(id);
+		//4.删除菜单元素
+		int rows=sysMenuDao.deleteObject(id);
+		if(rows==0)
+		throw new ServiceException("此菜单可能已经不存在");
+		//5.返回结果
+		return rows;
+	}
+4.2.4	Controller类实现
+	业务描述与设计实现
+在菜单控制层对象中，添加用于处理菜单删除请求的方法。首先在此方法中通过形参接收客户端提交的数据，然后调用业务层对象执行删除操作，最后封装执行结果，并在运行时将响应对象转换为JSON格式的字符串，响应到客户端。
+	关键代码设计与实现
+第一步：在SysMenuController中添加用于执行删除业务的方法。代码如下：
+	  @RequestMapping("doDeleteObject")
+	  @ResponseBody
+	  public JsonResult doDeleteObject(Integer id){
+		  sysMenuService.deleteObjects(ids);
+		  return new JsonResult("delete ok");
+	  }
+第二步：启动tomcat进行访问测试，打开浏览器输入如下网址：
+http://localhost/menu/doDeleteObject?id=10
+4.3	客户端关键业务及代码实现
+4.3.1	菜单列表页面事件处理
+	业务描述及设计实现
+用户在页面上首先选择要删除的元素，然后点击删除按钮，将用户选择的记录id异步提交到服务端，最后在服务端执行菜单的删除动作。
+	关键代码设计与实现
+第一步：页面加载完成以后，在删除按钮上进行点击事件注册。关键代码如下：
+...
+$(".input-group-btn")
+	   .on("click",".btn-delete",doDeleteObject)
+...
+第二步：定义删除操作对应的事件处理函数。关键代码如下：
+function doDeleteObject(){
+	//1.获取选中的记录id
+	var id=doGetCheckedId();
+	if(!id){
+	  alert("请先选择");
+	  return;
+	}
+	//2.异步提交请求删除数据
+	var url="menu/doDeleteObject";
+	var params={"id":id};
+	$.post(url,params,function(result){
+		if(result.state==1){
+			alert(result.message);
+				   var tr=$("tbody input[type='radio']:checked")
+	          .parents("tr");
+	          tr.remove();//移出tr对象
+		}else{
+			alert(result.message);
+		}
+	});
+}
+第三步：定义获取用户选中的记录id的函数。关键代码如下：
+function doGetCheckedId(){
+	//1.获取选中的记录
+	var selections=$("#menuTable")
+	//bootstrapTreeTable是treeGrid插件内部定义的jquery扩展函数
+	//getSelections为扩展函数内部要调用的一个方法
+	.bootstrapTreeTable("getSelections");
+	//2.对记录进行判定
+	if(selections.length==1)
+	return selections[0].id;
+}
+
+
+5	菜单添加页面呈现
+5.1	准备菜单编辑页面
+首先准备菜单列表页面(/templates/pages/sys/menu_edit.html)，然后在menu_list.html页面中点击菜单添加时异步加载菜单编辑页面。
+
+5.2	菜单编辑页面呈现
+	业务描述与设计实现
+角色列表页面点击添加按钮时，异步加载角色编辑页面。
+	关键代码设计与实现
+第一步：角色列表页面上，添加按钮事件注册，关键代码如下：
+$(document).ready(function(){
+    ...	
+	$(".input-group-btn")
+    .on("click",".btn-add",doLoadEditUI);
+});
+第二步：定义添加按钮事件处理函数，关键代码如下：
+function doLoadEditUI(){
+	var title;
+	if($(this).hasClass("btn-add")){
+		title="添加菜单"
+	}
+	var url="menu/menu_edit";
+	$("#mainContentId").load(url,function(){
+		$(".box-title").html(title);
+	})
+}
+
+6	菜单编辑页面上级菜单呈现
+6.1	服务端关键业务及代码实现
+6.1.1	Node对象
+	业务描述与设计实现
+定义值对象封装查询到的上级菜单id，name，parentId信息。
+	关键代码设计与实现
+package com.cy.pj.common.vo;
+public class Node implements Serializable{
+	private static final long serialVersionUID = -6577397050669133046L;
+
+	private Integer id;
+	private String name;
+	private Integer parentId;
+	
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public Integer getParentId() {
+		return parentId;
+	}
+	public void setParentId(Integer parentId) {
+		this.parentId = parentId;
+	}
+	@Override
+	public String toString() {
+		return "Node [id=" + id + ", name=" + name + ", parentId=" + parentId + "]";
+	}
+	
+}
+
+6.1.2	Dao接口实现
+	业务描述与设计实现
+基于请求获取数据库对应的菜单表中的所有菜单id,name,parentId，一行记录封装为一个Node对象，多个node对象存储到List集合
+	关键代码设计与实现
+在SysMenuDao接口中添加，用于查询上级菜单相关信息。关键代码如下：
+List<Node> findZtreeMenuNodes();
+6.1.3	Mapper映射文件
+	业务描述与设计实现
+基于SysMenuMapper中方法的定义，编写用于菜单查询的SQL元素。
+	关键代码设计与实现
+在SysMenuMapper.xml中添加findZtreeMenuNodes元素，用于查询上级菜单信息。关键代码如下：
+    <select id="findZtreeMenuNodes"
+            resultType="com.cy.pj.common.vo.Node">
+        select id,name,parentId
+        from sys_menus        
+    </select>
+6.1.4	Service接口及实现类
+	业务描述与设计实现
+基于用户请求，通过数据层对象获取上级菜单相关信息。
+	关键代码实现
+第一步：在SysMenuService接口中，添加查询菜单信息的方法。关键代码如下：
+List<Node> findZtreeMenuNodes()
+第二步：在SysMenuServiceImpl类中添加，查询菜单信息方法的实现。关键代码如下：
+	@Override
+	public List<Node> findZtreeMenuNodes() {
+		return sysMenuDao.findZtreeMenuNodes();
+	}
+6.1.5	Controller类实现
+	业务描述与设计实现
+基于客户端请求,访问业务层对象方法,获取菜单节点对象,并封装返回。
+	关键代码设计与实现
+@RequestMapping("doFindZtreeMenuNodes")
+	 @ResponseBody
+	 public JsonResult doFindZtreeMenuNodes(){
+		 return new JsonResult(
+		 sysMenuService.findZtreeMenuNodes());
+	 }
+6.2	客户端关键业务及代码实现
+6.2.1	ZTree结构定义
+	业务描述与设计实现
+本模块以开源JS组件方式实现ZTree结构信息的呈现。
+	关键代码设计与实现
+在menu_edit.html页面中定义，用于呈现树结构的DIV组件（假如已有则无需定义）
+<div class="layui-layer layui-layer-page layui-layer-molv layer-anim" id="menuLayer" type="page" times="2" showtime="0" contype="object"
+		style="z-index:59891016; width: 300px; height: 450px; top: 100px; left: 500px; display:none">
+		<div class="layui-layer-title" style="cursor: move;">选择菜单</div>
+		<div class="layui-layer-content" style="height: 358px;">
+			<div style="padding: 10px;" class="layui-layer-wrap">
+				<ul id="menuTree" class="ztree"></ul>    <!-- 动态加载树 -->
+			</div>
+		</div>
+		<span class="layui-layer-setwin"> <a class="layui-layer-ico layui-layer-close layui-layer-close1 btn-cancel" ></a></span>
+		<div class="layui-layer-btn layui-layer-btn-">
+			<a class="layui-layer-btn0 btn-confirm">确定</a>
+			<a class="layui-layer-btn1 btn-cancel">取消</a>
+	     </div>
+      </div>
+6.2.2	ZTree数据呈现
+	业务描述与设计实现
+引入zTree需要的JS，并，并基于JS中的定义的API初始化zTree中的菜单信息。
+	关键代码设计与实现
+第一步：在menu_edit.html中定义zTree配置信息
+var zTree; 
+//初始化zTree时会用到
+var setting = {
+  	data : {
+  		simpleData : {
+  			enable : true,
+  			idKey : "id",  //节点数据中保存唯一标识的属性名称
+  			pIdKey : "parentId",  //节点数据中保存其父节点唯一标识的属性名称
+  			rootPId : null  //根节点id
+  		}
+  	}
+  }
+第二步：定义异步加载zTree信息的函数，关键代码如下：
+  function doLoadZtreeNodes(){
+	  
+	  var url="menu/doFindZtreeMenuNodes";
+	  //异步加载数据,并初始化数据
+	  $.getJSON(url,function(result){
+		  if(result.state==1){
+			  //使用init函数需要先引入ztree对应的js文件
+			  zTree=$.fn.zTree.init(
+					  $("#menuTree"),
+					  setting,
+					  result.data);
+	           $("#menuLayer").css("display","block");
+		  }else{
+			  alert(result.message);
+		  }
+	  })
+  }
+第三步：定义zTree中取消按钮事件处理函数，点击取消隐藏zTree。关键代码如下：
+  function doHideTree(){
+	 $("#menuLayer").css("display","none");
+  }
+第四步：定义zTree中确定按钮对应的事件处理处理函数。关键代码如下：
+function doSetSelectNode(){
+	  //1.获取选中的节点对象
+	  var nodes=zTree.getSelectedNodes();
+	  if(nodes.length==1){	  
+var node=nodes[0];
+	  console.log(node);
+	  //2.将对象中内容,填充到表单
+	  $("#parentId").data("parentId",node.id);
+	  $("#parentId").val(node.name);
+}
+	  //3.隐藏树对象
+	  doHideTree();
+  }
+ 第五步：定义页面加载完成以后的事件处理函数：
+  $(document).ready(function(){
+	  $("#mainContentId")
+	  .on("click",".load-sys-menu",doLoadZtreeNodes)
+      $("#menuLayer")
+      .on("click",".btn-confirm",doSetSelectNode)
+      .on("click",".btn-cancel",doHideTree)
+  
+  });
+
+7	菜单数据添加实现
+7.1	数据基本架构分析
+用户在菜单编辑页面输入数据，然后异步提交到服务端，其简易数据传递基本架构，如图-9所示：
+ 
+图-9
+7.2	服务端关键业务及代码实现
+7.2.1	Entity类定义
+	业务描述与设计实现
+定义持久化对象，封装客户端请求数据，并将数据传递到数据层进行持久化。
+	关键代码设计与实现
+菜单持久层对象类型定义，关键代码如下：
+public class SysMenu implements Serializable{
+	private static final long serialVersionUID = -8805983256624854549L;
+	private Integer id;
+	/**菜单名称*/
+	private String name;
+	/**菜单url: log/doFindPageObjects*/
+	private String url;
+	/**菜单类型(两种:按钮,普通菜单)*/
+	private Integer type=1;
+	/**排序(序号)*/
+	private Integer sort;
+	/**备注*/
+	private String note;
+	/**上级菜单id*/
+	private Integer parentId;
+	/**菜单对应的权限标识(sys:log:delete)*/
+	private String permission;
+	/**创建用户*/
+	private String createdUser;
+	/**修改用户*/
+	private String modifiedUser;
+	private Date createdTime;
+	private Date modifiedTime;
+	
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getUrl() {
+		return url;
+	}
+	public void setUrl(String url) {
+		this.url = url;
+	}
+	public Integer getType() {
+		return type;
+	}
+	public void setType(Integer type) {
+		this.type = type;
+	}
+	public Integer getSort() {
+		return sort;
+	}
+	public void setSort(Integer sort) {
+		this.sort = sort;
+	}
+	public String getNote() {
+		return note;
+	}
+	public void setNote(String note) {
+		this.note = note;
+	}
+	public Integer getParentId() {
+		return parentId;
+	}
+	public void setParentId(Integer parentId) {
+		this.parentId = parentId;
+	}
+	public String getPermission() {
+		return permission;
+	}
+	public void setPermission(String permission) {
+		this.permission = permission;
+	}
+	public String getCreatedUser() {
+		return createdUser;
+	}
+	public void setCreatedUser(String createdUser) {
+		this.createdUser = createdUser;
+	}
+	public String getModifiedUser() {
+		return modifiedUser;
+	}
+	public void setModifiedUser(String modifiedUser) {
+		this.modifiedUser = modifiedUser;
+	}
+	public Date getCreatedTime() {
+		return createdTime;
+	}
+	public void setCreatedTime(Date createdTime) {
+		this.createdTime = createdTime;
+	}
+	public Date getModifiedTime() {
+		return modifiedTime;
+	}
+	public void setModifiedTime(Date modifiedTime) {
+		this.modifiedTime = modifiedTime;
+	}
+}
+
+7.2.2	DAO接口定义
+	业务描述与设计实现
+负责将用户提交的菜单数据，持久化到数据库。
+	关键代码设计与实现
+在SysMenuDao接口中定义数据持久化方法：
+int insertObject(SysMenu entity);
+
+7.2.3	Mapper映射文件定义
+	业务描述与设计实现
+基于SysMenuDao中方法的定义，编写用于实现菜单添加的SQL元素。
+	关键代码设计与实现
+在SysMenuMapper.xml中添加insertObject元素，用于写入菜单信息。关键代码如下：
+<insert id="insertObject"
+            parameterType="com.cy.pj.sys.entity.SysMenu">
+          insert into sys_menus
+          (name,url,type,sort,note,parentId,permission,
+createdTime,modifiedTime,createdUser,modifiedUser)
+          values
+          (#{name},#{url},#{type},#{sort},#{note},#{parentId},
+#{permission},now(),now(),#{createdUser},#{modifiedUser})
+ </insert>
+7.2.4	Service接口定义及实现
+	业务描述与设计实现
+基于控制层请求，调用数据层对象将菜单信息写入到数据库中。
+	关键代码设计与实现
+第一步：在SysMenuService接口中，添加用于保存菜单对象的方法。关键代码如下：
+int saveObject(SysMenu entity);
+第二步：在SysMenuServiceImpl类中，实现菜单保存操作。关键代码如下：
+@Override
+public int saveObject(SysMenu entity) {
+		//1.合法验证
+		if(entity==null)
+		throw new ServiceException("保存对象不能为空");
+		if(StringUtils.isEmpty(entity.getName()))
+		throw new ServiceException("菜单名不能为空");
+		int rows;
+		//2.保存数据
+		try{
+		rows=sysMenuDao.insertObject(entity);
+		}catch(Exception e){
+		e.printStackTrace();
+		throw new ServiceException("保存失败");
+		}
+		//3.返回数据
+		return rows;
+	}
+
+7.2.5	Controller类定义
+	业务描述与设计实现
+接收客户端提交的菜单数据，并对其进行封装，然后调用业务层对象进行业务处理，最后将业务层处理结果响应到客户端。
+	关键代码设计与实现
+定义Controller方法，借助此方法处理保存菜单数据请求和响应逻辑。关键代码如下：
+
+	@RequestMapping("doSaveObject")
+	@ResponseBody
+	public JsonResult doSaveObject(SysMenu entity){
+		sysMenuService.saveObject(entity);
+		return new JsonResult("save ok");
+	}
+7.1	客户端关键业务及代码实现
+7.1.1	页面cancel按钮事件处理
+	业务描述与设计实现
+点击页面cancel按钮时，加载菜单那列表页面。
+	关键代码设计与实现
+第一步：事件注册（页面加载完成以后）
+  $(".box-footer")
+	  .on("click",".btn-cancel",doCancel)
+第二步：事件处理函数定义
+  function doCancel(){
+	var url="menu/menu_list";
+	$("#mainContentId").load(url);  
+  }
+
+7.1.1	页面Save按钮事件处理
+	业务描述与设计实现
+点击页面save按钮时，将页面上输入的菜单信息提交到服务端。
+	关键代码设计与实现
+第一步：事件注册（页面加载完成以后）。
+  $(".box-footer")
+	  .on("click",".btn-save",doSaveOrUpdate)
+第二步：Save按钮事件处理函数定义。关键代码如下：
+  function doSaveOrUpdate(){
+	  //1.获取表单数据
+	  var params=doGetEditFormData();
+	  //2.定义url
+	  var url="menu/doSaveObject";
+	  //3.异步提交数据
+	  $.post(url,params,function(result){
+		  if(result.state==1){
+			  alert(result.message);
+			  doCancel();
+		  }else{
+			  alert(result.message);
+		  }
+	  });
+  }
+第三步：表单数据获取及封装函数定义。关键代码如下：
+function doGetEditFormData(){
+	  var params={
+	    type:$("form input[name='typeId']:checked").val(),
+		name:$("#nameId").val(),
+		url:$("#urlId").val(),
+		sort:$("#sortId").val(),
+		permission:$("#permissionId").val(),
+		parentId:$("#parentId").data("parentId")
+	  }
+	  return params;
+  }
+8	菜单修改页面数据呈现
+8.1	客户端关键业务及代码实现
+8.1.1	列表页面修改按钮事件处理
+	业务描述与设计实现
+点击页面修改按钮时，获取选中菜单记录，并异步加载编辑页面。
+	关键代码设计与实现
+第一步：修改按钮事件注册，关键代码如下：
+
+	$(".input-group-btn")
+.on("click","btn-update",doLoadEditUI);
+
+第二步：修改按钮事件处理函数定义或修改，关键代码如下：
+function doLoadEditUI(){
+	var title;
+	if($(this).hasClass("btn-add")){
+		title="添加菜单"
+	}else if($(this).hasClass("btn-update")){
+		title="修改菜单"
+		//获取选中的记录数据
+		var rowData=doGetCheckedItem();
+		if(!rowData){
+			alert("请选择一个");
+			return;
+		}
+		$("#mainContentId").data("rowData",rowData);
+	}
+	var url="menu/menu_edit";
+	$("#mainContentId").load(url,function(){
+		$(".box-title").html(title);
+	})
+}
+第三步：获取用户选中记录的函数定义。关键代码如下：
+function doGetCheckedItem(){
+	var tr=$("tbody input[type='radio']:checked")
+	       .parents("tr");
+	return tr.data("rowData");
+}
+
+8.1.2	编辑页面菜单数据呈现
+	业务描述与设计实现
+页面加载完成，在页面指定位置呈现要修改的数据。
+	关键代码设计与实现
+第一步：页面加载完成以后，获取页面div中绑定的数据。关键代码如下：
+$(function(){
+      …
+	  //假如是修改
+	  var data=$("#mainContentId").data("rowData");
+	  if(data)doInitEditFormData(data);
+  });
+第二步：定义编辑页面数据初始化方法。关键代码如下：
+function doInitEditFormData(data){
+	/*   $("input[type='radio']").each(function(){
+		  if($(this).val()==data.type){
+			  $(this).prop("checked",true);
+		  }
+	  }) */
+	  $(".typeRadio input[value='"+data.type+"']").prop("checked",true);
+	  $("#nameId").val(data.name);
+	  $("#sortId").val(data.sort);
+	  $("#urlId").val(data.url);
+	  $("#permissionId").val(data.permission);
+	  $("#parentId").val(data.parentName);
+	  $("#parentId").data("parentId",data.parentId);
+  }
+
+9	菜单数据更新实现
+9.1	服务端关键业务及代码实现
+9.1.1	DAO接口实现
+	业务描述与设计实现
+负责将用户编辑页面提交到服务端的菜单数据，更新到数据库进行持久性存储。
+	关键代码设计与实现
+在SysMenuDao接口中添加数据更新方法，关键代码如下：
+int updateObject(SysMenu entity);
+
+9.1.2	Mapper映射文件定义
+	业务描述与设计实现
+基于SysMenuDao中updateObject方法的定义，编写用于实现菜单更新的SQL元素。
+	关键代码设计与实现
+在SysMenuMapper.xml中添加updateObject元素，用于更新菜单信息。关键代码如下：
+<update id="updateObject"
+            parameterType="com.cy.pj.sys.entity.SysMenu">
+         update sys_menus
+         set
+           name=#{name},
+           type=#{type},
+           sort=#{sort},
+           url=#{url},
+           parentId=#{parentId},
+           permission=#{permission},
+           modifiedUser=#{modifiedUser},
+           modifiedTime=now()
+        where id=#{id}
+    </update>
+9.1.3	Service接口及实现
+	业务描述与设计实现
+基于控制层请求，对数据进行校验并调用数据层对象将菜单信息更新到数据库中。
+	关键代码设计与实现
+第一步：在SysMenuService接口中，添加用于更新菜单对象的方法。关键代码如下：
+int updateObject(SysMenu entity);
+第二步：在SysMenuServiceImpl类中，实现菜单保存操作。关键代码如下：
+@Override
+public int updateObject(SysMenu entity) {
+		//1.合法验证
+		if(entity==null)
+		throw new ServiceException("保存对象不能为空");
+		if(StringUtils.isEmpty(entity.getName()))
+		throw new ServiceException("菜单名不能为空");
+		
+		//2.更新数据
+		int rows=sysMenuDao.updateObject(entity);
+		if(rows==0)
+		throw new ServiceException("记录可能已经不存在");
+		//3.返回数据
+		return rows;
+}
+9.1.4	Controller类定义
+	业务描述与设计实现
+接收客户端提交的菜单数据，并对其进行封装，然后调用业务层对象进行业务处理，最后将业务层处理结果响应到客户端。
+	关键代码设计与实现
+定义Controller方法，借助此方法处理保存菜单数据请求和响应逻辑。关键代码如下：
+	@RequestMapping("doUpdateObject")
+	@ResponseBody
+	public JsonResult doUpdateObject(SysMenu entity){
+		sysMenuService.updateObject(entity);
+		return new JsonResult("update ok");
+	}
+9.2	客户端关键业务及代码实现
+9.2.1	编辑页面更新按钮事件处理
+	业务描述与设计实现
+点击页面save按钮时，将页面上输入的菜单编辑信息提交到服务端。
+	关键代码设计与实现
+编辑Save按钮对应的事件处理函数。关键代码如下：
+ function doSaveOrUpdate(){
+	  //1.获取表单数据
+	  var params=doGetEditFormData();
+var rowData=$("#mainContentId").data("rowData");
+	  //2.定义url
+	  var insertUrl="menu/doSaveObject";
+	  var updateUrl="menu/doUpdateObject";
+	  var url=rowData?updateUrl:insertUrl;
+	  if(rowData)params.id=rowData.id;
+	  //3.异步提交数据
+	  $.post(url,params,function(result){
+		  if(result.state==1){
+			  alert(result.message);
+			  doCancel();
+		  }else{
+			  alert(result.message);
+		  }
+	  });
+  }
+10	总结
+10.1	重难点分析
+	菜单管理在整个系统中的定位。
+	菜单数据的自关联查询实现。
+	菜单管理中数据的封装过程。
+	菜单数据在客户端的呈现。
+
+10.2	FAQ分析
+	菜单表是如何设计的，都有哪些字段？
+	菜单列表数据在客户端是如何展示的？
+	菜单删除业务是如何处理的？
+	菜单编辑页面中上级菜单数据的呈现方式？
+	常用表连接方式，如图-10所示：
+ 
+图-10
+10.3	BUG分析
+	无效参数异常(IllegalArgumentException)，，如图-11所示：
+ 
+图-11
+问题分析：检查当前执行的业务，其结果映射配置，是否将resultType写成了resultMap。
+	菜单编辑页面，上级菜单树结构呈现，如图-12所示：
+ 
+图-12
+问题分析：检查查询结果中是否有parentId，或映射对象Node中parentId是否写错。
+	属性值注入失败，如图-13所示：
+ 
+图-13
+问题分析：检查Spring容器中是否有SysMenuService接口的实现类对象，因为在SysMenuController中需要一个这样的对象。
+
+
+		

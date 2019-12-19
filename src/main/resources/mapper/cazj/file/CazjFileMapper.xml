@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.CazjFileDao">
+	<sql id="queryWhereId">
+		<where>
+			<if test="name!=null and name!=''">
+				name like concat("%",#{name},"%") and status_id=4
+			</if>
+			<if test="name==null or name==''">
+				status_id=4
+			</if>
+		</where>
+	</sql>
+	<!-- 查询指定文件的总数 -->
+	<select id="getRowCount" resultType="int">
+		select count(*) from cazj_files
+		<include refid="queryWhereId"/>
+	</select>	
+	<!-- 查询指定文件并按发布时间降序分页显示 -->
+	<select id="findObjectByPass" resultType="com.cazj.pojo.CazjFile">
+		select id,name,release_time releaseTime,update_time updateTime,
+		createdUser,reviewUser,status_id statusId
+		from cazj_files
+		<!-- where status_id=4 --> 
+		<include refid="queryWhereId"/>
+		order by release_time desc
+		limit #{startIndex},#{pageSize}
+	</select>
+	<!-- 查询未提交和审核未过的文件 -->
+	<select id="findObjectByUnsub" resultType="com.cazj.pojo.CazjFile">
+		select id,name,release_time releaseTime,update_time updateTime,
+		createdUser,reviewUser,status_id statusId 
+		from cazj_files
+		where status_id=2 or status_id=3
+		order by status_id;
+	</select>
+	<!-- 查询审核中的文件 -->
+	<select id="findObjectByReview" resultType="com.cazj.pojo.CazjFile">
+		select id,name,release_time releaseTime,update_time updateTime,
+		createdUser,reviewUser,status_id statusId 
+		from cazj_files
+		where status_id=1
+	</select>
+	<!-- 基于id删除文件 -->
+	<delete id="deleteObjects">
+		delete from cazj_files
+		<where>
+			<foreach collection="ids" separator="or" item="id">
+				id=#{id}
+			</foreach>
+		</where>
+	</delete>
+	<!-- 新增文件 -->
+	<insert id="insertFile" parameterType="com.cazj.pojo.CazjFile">
+		insert into cazj_files 
+		(id,name,release_time,update_time,createdUser,reviewUser,status_id)
+		values
+		(null,#{name},null,now(),#{createdUser},null,#{statusId})
+	</insert>
+	<!-- 基于id查询文件 -->
+	<select id="findObjectById" resultType="com.cazj.pojo.CazjFile">
+		select id,name,release_time releaseTime,update_time updateTime,
+		createdUser,reviewUser,status_id statusId 
+		from cazj_files
+		where id=#{id}
+	</select>
+	<!-- 编辑文件 -->
+	<update id="updateFile" parameterType="com.cazj.pojo.CazjFile">
+		update cazj_files set
+		name=#{name},
+		update_time=now(),
+		status_id=#{statusId}
+		where id=#{id}
+	</update>
+	<!-- 文件审核通过 -->
+	<update id="updatePass">
+		update cazj_files set
+		release_time=now(),
+		update_time=now(),
+		reviewUser=#{reviewUser},
+		status_id=4
+		where id=#{id}
+	</update>
+	<!-- 文件审核不通过 -->
+	<update id="updateUnpass">
+		update cazj_files set
+		update_time=now(),
+		reviewUser=#{reviewUser},
+		status_id=3
+		where id=#{id}
+	</update>
+</mapper>

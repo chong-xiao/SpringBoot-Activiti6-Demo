@@ -1,0 +1,172 @@
+<div class="row" id="workflow_prepared_start_info">
+    <div class="col-xs-12">
+        <div class="box">
+            <div class="box-header">
+                <h3 class="box-title">流程准备发起页</h3>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body table-responsive no-padding">
+                <table class="table table-hover" id="workflow_prepared_start_table">
+                    <thead>
+                        <tr>
+                            <th>流程类别</th>
+                            <th>子类型</th>
+                            <th>紧急程度</th>
+                            <th>申请人</th>
+                            <th>创建时间</th>
+                            <th>流程状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody th:each="leaveBill:${workflowList.leaveBillList}">
+                        <form class="LeaveBill">
+                            <tr>
+                                <td>请假</td>
+                                <td>
+                                    <div th:switch="${leaveBill.typeId}">
+                                        <p th:case="37">年假</p>
+                                        <p th:case="38">事假</p>
+                                        <p th:case="39">病假</p>
+                                        <p th:case="40">婚假</p>
+                                        <p th:case="41">产假及哺乳假</p>
+                                        <p th:case="42">陪产假</p>
+                                        <p th:case="43">丧假</p>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div th:switch="${leaveBill.deeply}">
+                                        <p th:case="22">正常</p>
+                                        <p th:case="23">重要</p>
+                                        <p th:case="24">紧急</p>
+                                    </div>
+                                </td>
+                                <td>[[${leaveBill.username}]]</td>
+                                <td th:text="${#dates.format(leaveBill.creatTime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                                <td>
+                                    <div th:switch="${leaveBill.state}">
+                                        <p th:case="0">初始录入</p>
+                                        <p th:case="1">正在审批</p>
+                                        <p th:case="2">审批完成</p>
+                                        <p th:case="3">审批终止</p>
+                                    </div>
+                                </td>
+                                <td th:if="${leaveBill.state==0}">
+                                    <input class="btn btn-primary leaveBillDelete" type="button" value="删除" th:attr="workflowType=LeaveBill,workflowId=${leaveBill.id}">
+                                    <input class="btn btn-primary leaveBillModify" type="button" value="修改" th:attr="workflowType=LeaveBill,workflowId=${leaveBill.id},action=modify">
+                                    <input class="btn btn-primary leaveBillStart" type="button" value="发起流程" th:attr="workflowType=LeaveBill,workflowId=${leaveBill.id}">
+                                </td>
+                                <td th:if="${leaveBill.state==1}">
+                                    <input class="btn btn-primary workflow_view" type="button" value="查看审核记录" th:attr="workflowType=LeaveBill,workflowId=${leaveBill.id}">
+                                    <a target='_blank' th:href="@{/workflow/findCurrentProcessImageByWorkflowId(workflowId=${leaveBill.id})}">
+                                        <input class="btn btn-primary process_image_view" type="button" value="查看流程图">
+                                    </a>
+                                </td>
+                                <td th:if="${leaveBill.state==2}">
+                                    <input class="btn btn-primary workflow_view" type="button" value="查看审核记录" th:attr="workflowType=LeaveBill,workflowId=${leaveBill.id}">
+                                </td>
+                                <td th:if="${leaveBill.state==3}">
+                                    <input class="btn btn-primary workflow_view" type="button" value="查看审核记录" th:attr="workflowType=LeaveBill,workflowId=${leaveBill.id}">
+                                </td>
+                            </tr>
+                        </form>
+                    </tbody>
+                </table>
+            </div>
+            <!-- /.box-body -->
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+$(function() {
+
+    // $("#workflow_prepared_start_table").on('click', '.leaveBillDelete', doleaveBillDelete);
+    // $("#workflow_prepared_start_table").on('click', '.leaveBillModify', doleaveBillModify);
+    // $("#workflow_prepared_start_table").on('click', '.leaveBillStart', doleaveBillStart);
+
+    $(".leaveBillDelete").on('click', doleaveBillDelete);
+    $(".leaveBillModify").on('click', doleaveBillModify);
+    $(".leaveBillStart").on('click', doleaveBillStart);
+    $(".workflow_view").on('click', doworkflow_view);
+
+
+});
+
+function doleaveBillModify(){
+    var workflowType = $(this).attr('workflowType');
+    var workflowId = $(this).attr('workflowId');
+    var data = {
+        "workflowType": workflowType,
+        "workflowId": workflowId
+    }
+    $.getJSON('/workflow/workflow_leave_modify', data, function(result) {
+            if (result.state == 1) {
+                $("#mainContentId").removeData();
+                $("#mainContentId").data("LeaveBillData",result.data);
+                $("#mainContentId").load("workflow/workflow_leave_edit");
+            } else {
+                alert(result.message);
+            }
+    });
+
+}
+
+
+function doleaveBillDelete() {
+
+    var workflowType = $(this).attr('workflowType');
+    var workflowId = $(this).attr('workflowId');
+    var data = {
+        "workflowType": workflowType,
+        "workflowId": workflowId
+    }
+    //console.log(data);
+    $.ajax({
+        url: "/workflow/workflow_leave_delete",
+        type: 'POST',
+        data: data,
+        success: function(result) {
+            if (result.state == 1) {
+                $("#mainContentId").load("workflow/workflow_prepared_start");
+            } else {
+                alert(result.message);
+            }
+        }
+    });
+}
+
+
+function doleaveBillStart() {
+    var workflowType = $(this).attr('workflowType');
+    var workflowId = $(this).attr('workflowId');
+    var data = {
+        "workflowType": workflowType,
+        "workflowId": workflowId
+    }
+
+    $.ajax({
+        url: "/workflow/workflow_leave_start",
+        type: 'POST',
+        data: data,
+        success: function(result) {
+            if (result.state == 1) {
+                $("#mainContentId").load("workflow/workflow_prepared_start");
+            } else {
+                alert(result.message);
+            }
+        }
+    });
+}
+
+function doworkflow_view(){
+    var workflowType = $(this).attr('workflowType');
+    var workflowId = $(this).attr('workflowId');
+    var data = {
+        "workflowType": workflowType,
+        "workflowId": workflowId
+    }
+
+    var JumpUrl ="workflow/workflow_view_jump"+"?workflowType="+workflowType+"&workflowId="+workflowId
+    $("#mainContentId").load(JumpUrl);
+}
+
+</script>

@@ -1,0 +1,143 @@
+<div class="row" style="padding-top: 15px;">
+    <div class="col-md-12">
+        <div class="bgc-w box">
+            <form action="#" enctype="multipart/form-data" method="post" id="leaveForm">
+                <div class="box-header">
+                    <table class="bo table ">
+                        <tbody>
+                            <tr>
+                                <td colspan="14" class="title">
+                                    <h2>请假申请单</h2>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="title"><label class="control-label">请假说明</label></td>
+                                <td colspan="13">
+                                    <textarea class="form-control shuoming" readonly="readonly" style="background-color:#fff;height:250px">员工因临时或突发情况无法到岗，未能提前请病假或事假的，则应用电话通知直接上级批准后，短信通知人事行政部，说明请假事由，并在上班后第一时间补办请假手续，如在2个工作日内未提交请假流程，超过2个工作日补流程无效，均视为旷工，扣除当日双倍工资。  
+1、年假：工作满一年以上每年可享受带薪年假，当年的年假使用期至次年3月1日止；未经用人单位批准，员工不得自行休假。
+2、事假：按照平均工作日扣发薪资（包含工资及各类补贴福利）；单次事假原则上不应超过3天，当年累计事假超过15天的视为主动放弃继续履行岗位职责的权利，特殊情况除外。  
+3、病假：两天及以上病假必须持工作地二级甲等以上医院相关病假证明单或就医记录证明，否则无法享受病假工资；单次病假超过5天，应当持有工作所在地三级甲等医院提供的病假证明单。原则上当年累计病假超过15天应视为不具备继续履行岗位职责身体条件，特殊情况除外。  
+4、婚假：婚假为十天，包含休息日，请婚假必须持结婚证明，结婚证必须在泛微工作期间领取，且婚假必须在一年内使用完毕，不得分次休假，国家或地方政府有其他规定的按照当地要求执行；  
+5、产假及哺乳假：按国家及地方法律法规执行，包含休息日与法定节假日；  
+6、陪产假：泛微正式男性员工在工作期间配偶生育的，可凭子女出生证明，享受十个自然日陪产假。  
+7、丧假：直系亲属：配偶、子女、父母可享受三天，岳父母、祖父母、外祖父母可享受一天
+						</textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="title"><label class="control-label">请假类型</label></td>
+                                <td colspan="6">
+                                    <select class="form-control inpu" name="typeId" id="leaveTypeId">
+                                        <option value="37">年假</option>
+                                        <option value="38">事假</option>
+                                        <option value="39">病假</option>
+                                        <option value="40">婚假</option>
+                                        <option value="41">产假及哺乳假</option>
+                                        <option value="42">陪产假</option>
+                                        <option value="43">丧假</option>
+                                    </select>
+                                </td>
+                                <td class="title"><span>紧急程度</span></td>
+                                <td colspan="6">
+                                    <select class="form-control inpu" name="deeply" id="leaveDeeply">
+                                        <option value="22">正常</option>
+                                        <option value="23">重要</option>
+                                        <option value="24">紧急</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="title"><label class="control-label">申请人</label></td>
+                                <td colspan="6"><input type="text" class="form-control input" name="username" id="LeaveUsername" readonly="true" style="background-color:#fff;" th:value="${username}"></td>
+                                <td class="title"><label class="control-label">请假天数</label></td>
+                                <td colspan="6"><input type="text" class="form-control inpu days" name="leaveDays" id="leaveLeaveDays" style="background-color:#fff;"></td>
+                            </tr>
+                            <!--
+				<tr>
+					<td class="title"><label class="control-label">开始日期</label></td>
+					<td colspan="6"><input type="text" class="form-control inpu holistart" name="proId.startTime"></td>
+					<td class="title"><label class="control-label">结束日期</label></td>
+					<td colspan="6"><input type="text" class="form-control inpu holiend" name="proId.endTime"></td>
+				</tr>
+				-->
+                            <tr>
+                                <td class="title"><label class="control-label">请假原因</label></td>
+                                <td colspan="6"><textarea class="form-control text" name="content" id="LeaveContent"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td colspan="14" style="text-align: right;">
+                                	<input type="hidden" name="id" id="LeaveId">
+                                    <input class="btn btn-primary" id="save" type="button" value="保存">
+                                    <input class="btn btn-default" id="cancel" type="button" value="取消" onclick="window.history.back();">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+
+function doInitEditFormData(data) {
+
+    var leaveType=$("#leaveTypeId option[value='"+data.typeId+"']").val();
+    console.log("leaveType",leaveType)
+    $("#leaveTypeId option[value='"+data.typeId+"']").attr("selected", true);  //下拉菜单选中， 使用attr属性， prop无效。
+    $("#leaveDeeply option[value='"+data.deeply+"']").attr("selected", true);
+    $("#leaveLeaveDays").val(data.leaveDays);
+    $("#LeaveId").val(data.id);
+    $("#LeaveContent").val(data.content);
+}
+
+$(function() {
+    var data = $("#mainContentId").data("LeaveBillData");
+    if (data) doInitEditFormData(data);
+
+    $("#cancel").on('click', doLeaveCancel);
+    $("#save").on('click', doLeaveSaveOrUpdate);
+
+});
+
+function doLeaveCancel() {
+	// var LeaveBillData = $("#mainContentId").data("LeaveBillData");
+	// var urlNew = "workflow/workflow_new";
+ //    var urlPre = "workflow/workflow_prepared_start";
+ //    var url = LeaveBillData ? urlPre : urlNew;
+ //    $("#mainContentId").removeData();
+ //    $("#mainContentId").load(url);
+$("#mainContentId").load("workflow/workflow_prepared_start");
+}
+
+
+function doLeaveSaveOrUpdate() {
+    //1.获取表单数据
+    var formdata = new FormData($("#leaveForm")[0]);   //Jquery与FormData结合, 由于jqery返回的有可能是list,所以只必使用[0]
+    //判断是否有给LeaveBillData， 如有，则是从修改处跳转过来的
+    var LeaveBillData = $("#mainContentId").data("LeaveBillData");
+    //2.定义保存，还是修改的url
+    var insertUrl = "/workflow/workflow_leave_save";
+    var updateUrl = "/workflow/workflow_leave_update";
+    var url = LeaveBillData ? updateUrl : insertUrl;
+
+    //3.异步提交数据
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: formdata,
+        processData: false,
+        contentType: false,
+        success: function(result) {
+            if (result.state == 1) {
+                $("#mainContentId").load("workflow/workflow_prepared_start");
+            } else {
+                alert(result.message);
+            }
+        }
+    });
+}
+
+
+
+</script>

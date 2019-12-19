@@ -1,0 +1,79 @@
+<div class="row" style="padding-top: 10px;">
+    <div class="col-md-2">
+        <h1 style="font-size: 24px; margin: 0;" class="">新建流程</h1>
+    </div>
+    <div class="col-md-10 text-right">
+        <a href="#"><span class="glyphicon glyphicon-home"></span> 首页</a> &gt; <a disabled="disabled">新建流程</a>
+    </div>
+</div>
+<div class="row" style="padding-top: 15px;">
+    <div class="col-md-12">
+        <div class="bgc-w box">
+            <!--盒子身体-->
+            <div class="box-body no-padding">
+                <div class="box-body">
+                    <div class="row me" style="padding-top: 40px;padding-left: 40px;">
+                        <a href="#" id="leave_edit_id">
+                            <div class="col-md-3 form-group">
+                                <label class="control-label" style="float:left;"><img src="./dist/workflow/img/qingjia.jpg" style="width:100px;height:100px;"></label>
+                                <div>
+                                    <h4>请假申请单</h4><br>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#">
+                            <div class="col-md-3 form-group">
+                                <label class="control-label" style="float:left;"><img src="./dist/workflow/img/money.jpg" style="width:100px;height:100px;"></label>
+                                <div>
+                                    <h4>费用报销单</h4><br>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#">
+                            <div class="col-md-3 form-group">
+                                <label class="control-label" style="float:left;"><img src="./dist/workflow/img/chuchai.jpg" style="width:100px;height:100px;"></label>
+                                <div>
+                                    <h4>出差申请单</h4><br>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#">
+                            <div class="col-md-3 form-group">
+                                <label class="control-label" style="float:left;"><img src="./dist/workflow/img/jiaban.jpg" style="width:100px;height:100px;"></label>
+                                <div>
+                                    <h4>加班申请单</h4><br>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#">
+                            <div class="col-md-3 form-group">
+                                <label class="control-label" style="float:left;"><img src="./dist/workflow/img/zhuanzhneg.jpg" style="width:100px;height:100px;"></label>
+                                <div>
+                                    <h4>转正申请单</h4><br>
+                                </div>
+                            </div>
+                        </a>
+                        <a href="#">
+                            <div class="col-md-3 form-group">
+                                <label class="control-label" style="float:left;"><img src="./dist/workflow/img/lizhi.jpg" style="width:100px;height:100px;"></label>
+                                <div>
+                                    <h4>离职申请单</h4><br>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+$(function() {
+
+
+    $("#leave_edit_id").on('click', function(event) {
+    	$("#mainContentId").removeData();
+        $("#mainContentId").load("workflow/workflow_leave_edit");
+    });
+});
+</script>

@@ -1,0 +1,1007 @@
+null
+﻿2   角色管理设计说明
+1.1	业务设计说明
+本模块主要实现的是企业内部角色(岗位)的管理,可以在添加角色时,为角色分配资源访问权限,最后将角色再分配给用户，图-1所示：
+图-1
+基于对表的设计，其数据逻辑关系的展示，如图-2所示：
+图-2
+角色表设计脚本如下:
+CREATE TABLE `sys_roles` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) DEFAULT NULL COMMENT '角色名称',
+  `note` varchar(500) DEFAULT NULL COMMENT '备注',
+  `createdTime` datetime DEFAULT NULL COMMENT '创建时间',
+  `modifiedTime` datetime DEFAULT NULL COMMENT '修改时间',
+  `createdUser` varchar(20) DEFAULT NULL COMMENT '创建用户',
+  `modifiedUser` varchar(20) DEFAULT NULL COMMENT '修改用户',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8 COMMENT='角色';
+菜单与角色的关系表脚本设计如下：
+CREATE TABLE `sys_role_menus` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `role_id` int(11) DEFAULT NULL COMMENT '角色ID',
+  `menu_id` int(11) DEFAULT NULL COMMENT 'ID',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1250 DEFAULT CHARSET=utf8 COMMENT='角色与菜单对应关系';
+用户与角色关系表设计脚本如下:
+CREATE TABLE `sys_user_roles` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL COMMENT '用户ID',
+  `role_id` int(11) DEFAULT NULL COMMENT '角色ID',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8 COMMENT='用户与角色对应关系';
+1.2	原型设计说明
+基于用户需求，通过静态页面为用户呈现角色模块的基本需求。
+当在主页点击角色管理时，呈现角色列表页面，如图-3所示。
+ 
+图-3
+在列表页面点击添加按钮时，呈现角色编辑页面,如图-4所示.
+ 
+图-4
+在列表页面点击编辑按钮时，呈现角色编辑页面，如图-5所示。
+ 
+
+图-5
+说明:假如客户对此原型进行了确认,后续则可以基于此原型进行研发。
+1.3	API设计说明
+菜单管理业务后台API分层架构及调用关系如图-6所示：
+ 
+图-6
+说明：分层目的主要将复杂问题简单化，实现各司其职，各尽所能。
+2	角色管理列表页面呈现
+2.1	服务端实现
+2.1.1	Controller实现
+	业务描述与设计实现
+基于角色管理的请求业务，在PageController中添加返回角色页面相关方法。
+	关键代码设计与实现
+检查PageController中是否有返回UI页面的方法，有则无需添加。例如：
+@RequestMapping("{module}/{moduleUI}")
+public String doModuleUI(@PathVariable String moduleUI) {
+		return "sys/"+moduleUI;
+}
+2.2	客户端实现
+2.2.1	首页菜单事件处理
+	业务描述与设计实现
+首先准备角色列表页面(/templates/pages/sys/role_list.html)，然后在starter.html页面中点击菜单管理时异步加载角色列表页面。
+	关键代码设计与实现
+找到项目中的starter.html 页面，页面加载完成以后，注册菜单管理项的点击事件，当点击角色管理时，执行事件处理函数。关键代码如下：
+$(function(){
+     doLoadUI("load-role-id","role/role_list")
+})
+function doLoadUI(id,url){
+ 	$("#"+id).click(function(){
+    		$("#mainContentId").load(url);
+    });
+}
+其中，load函数为jquery中的ajax异步请求函数。
+2.2.2	角色列表页面
+	业务描述与设计实现
+本页面呈现角色信息时要以分页形式进行呈现。
+	关键代码设计与实现：
+参考sys_role.html文件内容
+3	角色管理列表数据呈现
+3.1	数据架构分析
+角色列表页面加载完成，启动角色数据异步加载操作，本次角色列表页面要以分页形式呈现角色信息，其数据查询时，数据的封装及传递过程，如图-7所示。
+ 
+图-7
+说明：本模块将从数据库查询到的角色数据封装到SysRole对象，一行记录一个SysRole对象。
+3.2	服务端关键业务及代码实现
+3.2.1	Entity类实现
+	业务描述及设计实现
+构建实体对象（POJO）封装从数据库查询到的记录，一行记录映射为内存中一个的这样的对象。对象属性定义时尽量与表中字段有一定的映射关系，并添加对应的set/get/toString等方法，便于对数据进行更好的操作。
+	关键代码分析及实现
+package com.cy.pj.sys.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+public class SysRole implements Serializable{
+	private static final long serialVersionUID = -356538509994150709L;
+	private Integer id;
+	private String name;
+	private String note;
+	private Date createdTime;
+	private Date modifiedTime;
+	private String createdUser;
+	private String modifiedUser;
+	public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id = id;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public String getNote() {
+		return note;
+	}
+	public void setNote(String note) {
+		this.note = note;
+	}
+	public Date getCreatedTime() {
+		return createdTime;
+	}
+	public void setCreatedTime(Date createdTime) {
+		this.createdTime = createdTime;
+	}
+	public Date getModifiedTime() {
+		return modifiedTime;
+	}
+	public void setModifiedTime(Date modifiedTime) {
+		this.modifiedTime = modifiedTime;
+	}
+	public String getCreatedUser() {
+		return createdUser;
+	}
+	public void setCreatedUser(String createdUser) {
+		this.createdUser = createdUser;
+	}
+	public String getModifiedUser() {
+		return modifiedUser;
+	}
+	public void setModifiedUser(String modifiedUser) {
+		this.modifiedUser = modifiedUser;
+	}
+	
+}
+说明：通过此对象除了可以封装从数据库查询的数据，还可以封装客户端请求数据，实现层与层之间数据的传递。
+
+3.2.2	Dao接口实现
+	业务描述及设计实现
+通过数据层对象，基于业务层参数数据查询角色记录总数以及当前页面要呈现的角色信息。 
+	关键代码分析及实现：
+第一步：定义角色数据层接口对象，通过将此对象保证给业务层以提供角色数据操作。代码如下：
+@Mapper
+public interface SysRoleDao {
+}
+
+第二步：在SysRoleDao接口中添加getRowCount方法用于按条件统计记录总数。代码如下：
+	/**
+	 * 基于条件查询总记录数
+	 * @param name 查询条件
+	 * @return 总记录数(基于这个结果可以计算总页数)
+	 * 说明：假如如下方法没有使用注解修饰，在基于名字进行查询
+	 * 时候会出现There is no getter for property named
+	 * 'username' in 'class java.lang.String'
+	 */
+	int getRowCount(@Param("name") String name);
+	
+}
+第三步：在SysRoleDao接口中添加findPageObjects方法，基于此方法实现当前页记录的数据查询操作。代码如下：
+	/**
+	 * 基于条件分页查询角色信息
+	 * @param name  查询条件
+	 * @param startIndex 当前页的起始位置
+	 * @param pageSize 当前页的页面大小
+	 * @return 当前页的角色记录信息
+	 * 数据库中每条角色信息封装到一个SysLog对象中
+	 */
+	List<SysRole> findPageObjects(
+			      @Param("name")String  name,
+			      @Param("startIndex")Integer startIndex,
+			      @Param("pageSize")Integer pageSize);
+
+说明：
+1)	当DAO中方法参数多余一个时尽量使用@Param注解进行修饰并指定名字，然后再Mapper文件中便可以通过类似#{username}方式进行获取，否则只能通过#{arg0}，#{arg1}或者#{param1}，#{param2}等方式进行获取。
+2)	当DAO方法中的参数应用在动态SQL中时无论多少个参数，尽量使用@Param注解进行修饰并定义。
+3.2.3	Mapper文件实现
+	业务描述及设计实现
+基于Dao接口创建映射文件，在此文件中通过相关元素(例如select)描述要执行的数据操作。
+	关键代码设计及实现
+第一步：在映射文件的设计目录中添加SysRoleMapper.xml映射文件，代码如下：
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysRoleDao">
+  
+</mapper>
+第二步：在映射文件中添加sql元素实现，SQL中的共性操作，代码如下：
+    <sql id="queryWhereId">
+          <where>
+            <if test="name!=null and name!=''">
+               name like concat("%",#{name},"%")
+            </if>
+          </where>
+    </sql>
+第三步：在映射文件中添加id为getRowCount元素，按条件统计记录总数，代码如下：
+  <select id="getRowCount"
+            resultType="int">
+          select count(*) 
+          from sys_roles
+          <include refid="queryWhereId"/>
+    </select>
+第四步：在映射文件中添加id为findPageObjects元素，实现分页查询。代码如下：
+    <select id="findPageObjects"
+            resultType="com.cy.pj.sys.entity.SysRole">
+         select *
+         from sys_roles
+         <include refid="queryWhereId"/>
+order by createdTime desc
+         limit #{startIndex},#{pageSize}    
+</select>
+
+
+思考:
+1)	动态sql:基于用于需求动态拼接SQL
+2)	Sql标签元素的作用是什么?对sql语句中的共性进行提取,以遍实现更好的复用.
+3)	Include标签的作用是什么?引入使用sql标签定义的元素
+
+3.2.4	Service接口及实现类
+	业务描述与设计实现
+在角色分页查询中，业务层对象主要负责对业务数据进行校验，并借助数据层对象完成数据的分页查询操作。
+	关键代码设计及实现
+第一步：定义角色业务接口及方法，暴露外界对角色业务数据的访问，其代码参考如下：
+package com.cy.pj.sys.service;
+public interface SysRoleService {
+	 PageObject<SysRole> findPageObjects(
+			 String name,Integer pageCurrent);
+}
+   第二步：定义角色业务接口实现类，并添加角色业务数据分页查询操作的具体实现,其代码参考如下：
+package com.cy.pj.sys.service.impl;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+@Service
+public class SysRoleServiceImpl implements SysRoleService {
+	@Override
+	public PageObject<SysRole> findPageObjects(
+			String username,Integer pageCurrent) {
+		//1.对参数进行校验
+		if(pageCurrent==null||pageCurrent<1)
+		throw new IllegalArgumentException("当前页码值无效");
+		//2.查询总记录数并进行校验
+		int rowCount=sysRoleDao.getRowCount(username);
+		if(rowCount==0)
+		throw new ServiceException("没有找到对应记录");
+		//3.查询当前页记录
+		int pageSize=2;
+		int startIndex=(pageCurrent-1)*pageSize;
+		List<SysRole> records=
+		sysRoleDao.findPageObjects(username,
+		startIndex, pageSize);
+		//4.对查询结果进行封装并返回
+		return new PageObject<>(pageCurrent, pageSize, rowCount, records);
+	}
+}
+3.2.5	Controller类实现
+	业务描述与设计实现
+控制层对象主要负责请求和响应数据的处理，例如，本模块通过业务层对象执行业务逻辑，再通过VO对象封装响应结果(主要对业务层数据添加状态信息)，最后将响应结果转换为JSON格式的字符串响应到客户端。
+	关键代码设计与实现
+定义Controller类，并将此类对象使用Spring框架中的@RestController注解进行标识，表示此类对象要交给Spring管理。然后基于@RequestMapping注解为此类定义根路径映射。代码参考如下：
+package com.cy.pj.sys.controller;
+@RestController
+@RequestMapping("/role/")
+public class SysRoleController {
+}
+在Controller类中添加菜单查询处理方法，代码参考如下：
+@RequestMapping("doFindPageObjects")
+public JsonResult doFindPageObjects(
+			 String name,Integer pageCurrent) {
+		 return new JsonResult(
+			sysRoleService.findPageObjects(name,
+					pageCurrent));
+	 }
+3.3	客户端关键业务及代码实现
+3.3.1	菜单列表信息呈现
+	业务描述与设计实现
+角色分页页面加载完成以后，向服务端发起异步请求加载角色信息，当角色信息加载完成需要将角色信息、分页信息呈现到列表页面上。
+
+	关键代码设计与实现
+异步请求处理函数，关键代码如下：
+第一步：分页页面加载完成，向服务端发起异步请求，代码参考如下：
+  $(function(){
+	   //为什么要将doGetObjects函数写到load函数对应的回调内部。
+	   $("#pageId").load("doPageUI", doGetObjects)
+);
+}
+第二步：定义异步请求处理函数，代码参考如下：
+   function doGetObjects(){
+	   //debugger;//断点调试
+	   //1.定义url和参数
+	   var url="role/doFindPageObjects"
+	   var params={"pageCurrent":1};//pageCurrent=2
+	   //2.发起异步请求
+         $.getJSON(url,params,function(result){
+    	        doHandleResponseResult(result);
+		 }
+	   );//特殊的ajax函数
+   }
+第三步：定义回调函数，处理服务端的响应结果。代码如下：
+function doHandleResponseResult (result){ //JsonResult
+	   if(result.state==1){//ok
+		//更新table中tbody内部的数据
+		doSetTableBodyRows(result.data.records);//将数据呈现在页面上 
+		//更新页面page.html分页数据
+		doSetPagination(result.data); //此方法写到page.html中
+	    }else{
+		alert(result.msg);
+	    }  
+ }
+第四步：将异步响应结果呈现在table的tbody位置。代码参考如下：
+   function doSetTableBodyRows(records){
+	   //1.获取tbody对象，并清空对象
+	   var tBody=$("#tbodyId");
+	   tBody.empty();
+	   //2.迭代records记录，并将其内容追加到tbody
+	   for(var i in records){
+		   //2.1 构建tr对象
+		   var tr=$("<tr></tr>");
+		   //2.2 构建tds对象
+		   var tds=doCreateTds(records[i]);
+		   //2.3 将tds追加到tr中
+		   tr.append(tds);
+		   //2.4 将tr追加到tbody中
+		   tBody.append(tr);
+	   }
+   }
+第五步：创建每行中的td元素，并填充具体业务数据。代码参考如下：
+   function doCreateTds(row,i){
+	   var tds=
+       "<td>"+(parseInt(i)+1)+"</td>"+
+	   "<td>"+row.name+"</td>"+
+       "<td>"+row.note+"</td>"+
+       "<td>"+new Date(row.createdTime).toLocaleString()+"</td>"+
+       "<td>"+new Date(row.modifiedTime).toLocaleString()+"</td>"+
+       "<td>"+row.createdUser+"</td>"+
+       "<td>"+row.modifiedUser+"</td>"+
+       "<td><a class='btn-delete'>delete</a>"+
+       "&nbsp;<a class='btn-update'>update</a></td>";
+       return tds;
+   }
+4	角色管理删除操作实现
+4.1	核心业务分析
+基于用户在列表页面上选择的的用户记录ID，执行删除操作，本次删除业务实现中，首先要基于id删除角色菜单关系数据，然后基于id删除用户角色关系数据，最后删除角色自身信息。
+4.2	服务端关键业务及代码实现
+4.2.1	Dao接口实现
+	业务描述及设计实现
+数据层基于业务层提交的角色记录id，先删除角色相关的关系数据，然后删除角色自身记录信息。
+	关键代码设计及实现：
+第一步：在创建SysRoleMenuDao并定义基于角色id删除关系数据的方法，关键代码如下：
+public interface SysRoleMenuDao {
+	int deleteObjectsByRoleId(Integer roleId);
+}
+第二步：创建SysUserRoleDao并定义基于角色id删除关系数据的方法，关键代码如下：
+public interface SysUserRoleDao {
+	int deleteObjectsByRoleId(Integer roleId);
+}
+
+第三步：在SysRoleDao中添加基于菜单id删除角色记录的方法。代码参考如下：
+int deleteObject(Integer id);
+4.2.2	Mapper文件实现
+	业务描述及设计实现
+在SysRoleMenuDao,SysUserRoleDao，SysRoleDao接口对应的映射文件中添加用于执行删除业务的delete元素，然后在元素内部定义具体的SQL实现。
+	关键代码设计与实现
+第一步：创建SysRoleMenuMapper.xml文件并添加基于菜单id删除关系数据的元素，关键代码如下：
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cy.pj.sys.dao.SysRoleMenuDao">
+       <delete id="deleteObjectsByRoleId"
+             parameterType="int">
+          delete from sys_role_menus
+          where role_id=#{roleId}
+        </delete>
+</mapper>
+第二步：在SysUserRoleMapper.xml文件中添加基于id删除用户角色关系数据的元素，关键代码如下：
+<delete id="deleteObjectsByRoleId "
+             parameterType="int"
+             resultType="int">
+          delete from sys_user_roles
+          where role_id=#{roleId}        
+ </delete>
+第三步：在SysRoleMapper.xml文件添加delete元素,基于橘色id删除角色自身记录信息，关键代码如下：
+
+    <delete id="deleteObject">
+       delete from sys_roles
+       where id =#{id}
+    </delete>
+4.2.3	Service接口及实现类
+	业务描述与设计实现
+在角色业务层定义用于执行角色删除业务的方法，首先通过方法参数接收控制层传递的角色id，并对参数id进行校验。然后基于角色id删除角色菜单关系数据，用户角色关系数据。最后删除自身记录信息后并返回业务执行结果。
+	关键代码设计与实现
+第一步：在SysRoleService接口中，添加基于id进行角色删除的方法。关键代码如下：
+int deleteObject(Integer id);
+第二步：在SysRoleServiceImpl实现类中注入SysRoleMenuDao，SysUserRoleDao相关对象。关键代码如下：
+@Autowired
+private SysRoleMenuDao sysRoleMenuDao;
+@Autowired
+private SysUserRoleDao sysUserRoleDao;
+
+第二步：在SysRoleServiceImpl实现类中添加删除业务的具体实现。关键代码如下：
+	@Override
+	public int deleteObject(Integer id) {
+		//1.验证数据的合法性
+		if(id==null||id<=0)
+		throw new IllegalArgumentException("请先选择");
+		//3.基于id删除关系数据
+		sysRoleMenuDao.deleteObjectsByRoleId(id);
+        sysUserRoleDao.deleteObjectsByRoleId(id);
+		if(rows==0)
+		throw new ServiceException("此菜单可能已经不存在");
+		//4.删除角色自身
+		sysRoleDao.deleteObject(id);
+		//5.返回结果
+		return rows;
+	}
+4.2.4	Controller类实现
+	业务描述与设计实现
+在角色控制层对象中，添加用于处理角色删除请求的方法。首先在此方法中通过形参接收客户端提交的数据，然后调用业务层对象执行删除操作，最后封装执行结果，并在运行时将响应对象转换为JSON格式的字符串，响应到客户端。
+	关键代码设计与实现
+第一步：在SysRoleController中添加用于执行删除业务的方法。代码如下：
+	  @RequestMapping("doDeleteObject")
+	  public JsonResult doDeleteObject(Integer id){
+		  sysRoleService.deleteObject(id);
+		  return new JsonResult("delete ok");
+	  }
+第二步：启动tomcat进行访问测试，打开浏览器输入如下网址：
+http://localhost/role/doDeleteObject?id=10
+4.3	客户端关键业务及代码实现
+4.3.1	菜单列表页面事件处理
+	业务描述及设计实现
+用户在页面上首先选择要删除的元素，然后点击删除按钮，将用户选择的记录id异步提交到服务端，最后在服务端执行角色的删除动作。
+	关键代码设计与实现
+第一步：页面加载完成以后，在删除按钮上进行点击事件注册。关键代码如下：
+...
+$(".input-group-btn")
+	   .on("click",".btn-delete",doDeleteObject)
+...
+第二步：定义删除操作对应的事件处理函数。关键代码如下：
+function doDeleteObject(){
+	   //1.获取选中的值(分页显示记录时在tr上要绑定id的值)
+	   var id=$(this).parents("tr").data("id");
+	   //2.构建参数对象
+	   var params={id:id};
+	   //3.异步请求执行删除
+	   var url="role/doDeleteObject";
+	   $.post(url,params,function(result){
+		   if(result.state==1){
+			   alert(result.message);
+			   doGetObjects();
+		   }else{
+			   alert(result.message);
+		   }
+	   })
+   }
+5	角色添加页面呈现
+5.1	准备角色编辑页面
+准备角色编辑页面(/templates/pages/sys/role_edit.html)
+5.2	角色编辑页面呈现
+	业务描述与设计实现
+在角色列表页面中点击添加按钮时，呈现角色编辑页面。
+	关键代码设计与实现
+第一步：角色列表事件注册，关键代码如下：
+$(document).ready(function(){
+    ...	
+	$(".input-group-btn")
+    .on("click",".btn-add",doLoadEditUI);
+});
+第二步：定义角色列表页面添加按钮的事件处理函数，关键代码如下：
+//异步加载编辑页面
+ function doLoadEditUI(){
+	   var title;
+	   //hasClass函数用于判定对象中是否包含某个样式
+	   if($(this).hasClass("btn-add")){
+		 title="角色添加"; 
+	   }else{
+		 title="角色修改";
+	   }
+	   loadPageUI(url);
+  }
+
+   function loadPageUI(title){
+	   $("#mainContentId")
+		  .load("role/role_edit",function(){
+			  $(".box-title").html(title);
+	   }); 
+   }
+5.3	角色编辑页面事件处理
+	业务描述与设计实现
+角色编辑页面加载完成，异步加载菜单信息并呈现在页面上。
+	关键代码设计与实现
+第一步：页面中引入zTree相关JS
+第二步：页面上定义zTree初始配置
+var zTree; 
+var setting = {
+   	data : {
+   	    simpleData : {
+   			enable : true,
+   			idKey : "id",  //节点数据中保存唯一标识的属性名称
+   			pIdKey : "parentId",  //节点数据中保存其父节点唯一标识的属性名称
+   			rootPId : null  //根节点id
+   		}
+   	},
+   	check:{
+   		enable:true,
+   		nocheckInherit:true
+   	}
+}
+第三步：异步加载菜单信息并进行呈现。
+function doLoadSysMenus(){
+    	var url="menu/doFindZtreeMenuNodes"
+    	$.getJSON(url,function(result){
+    		if(result.state==1){
+    		zTree=$.fn.zTree.init(
+    		$("#menuTree"),setting,result.data); 
+    		}else{
+    		alert(result.message);
+    		}
+    	});
+}
+6	角色数据添加实现
+6.1	数据基本架构分析
+用户在菜单编辑页面输入数据，然后异步提交到服务端，其简易数据传递基本架构，如图-9所示：
+ 
+图-9
+
+数据时序图分析，如图-10所示
+ 
+图-10
+6.2	服务端关键业务及代码实现
+6.2.1	DAO接口定义
+	业务描述与设计实现
+负责将用户提交的角色数据，持久化到数据库。
+	关键代码设计与实现
+在SysRoleDao接口中定义数据持久化方法：
+int insertObject(SysRole entity);
+SysRoleMenuDao接口中方法定义（不存在则创建）
+int insertObjects(
+			@Param("roleId")Integer roleId,
+			@Param("menuIds")Integer[] menuIds);
+
+6.2.2	Mapper映射文件定义
+	业务描述与设计实现
+基于SysRoleDao中方法的定义，编写用于实现角色添加的SQL元素。
+	关键代码设计与实现
+第一步:在SysRoleMapper.xml中添加insertObject元素，用于写入菜单信息。关键代码如下：
+    <insert id="insertObject"
+            parameterType="com.cy.pj.sys.entity.SysRole"
+useGeneratedKeys="true"
+keyProperty="id">
+         insert into sys_roles 
+         (id,name,note,createdTime,modifiedTime,
+         createdUser,modifiedUser) 
+         values
+         (null,#{name},#{note},now(),now(),
+         #{createdUser},#{modifiedUser})
+    </insert>
+第二步:在SysRoleMenuMapper中元素定义，关键代码如下：
+<insert id="insertObjects">
+         insert into sys_role_menus
+         (role_id,menu_id)
+         values 
+         <foreach collection="menuIds" 
+                  separator=","
+                  item="item">
+              (#{roleId},#{item})
+         </foreach>
+ </insert>
+
+
+6.2.3	Service接口定义及实现
+	业务描述与设计实现
+基于控制层请求，调用数据层对象将角色以及对应的菜单信息写入到数据库中。
+	关键代码设计与实现
+第一步：在SysRoleService接口中，添加用于保存角色对象的方法。关键代码如下：
+int saveObject(SysRole entity,Integer[]menuIds);
+第二步：在SysRoleServiceImpl类中，实现菜单保存操作。关键代码如下：
+	@Override
+	public int saveObject(SysRole entity, Integer[] menuIds) {
+		//1.参数有效性校验
+		if(entity==null)
+			throw new IllegalArgumentException("保存对象不能为空");
+		if(StringUtils.isEmpty(entity.getName()))
+			throw new IllegalArgumentException("角色名不允许为空");
+		if(menuIds==null||menuIds.length==0)
+			throw new ServiceException("必须为角色分配权限");
+		//2.保存角色自身信息
+		int rows=sysRoleDao.insertObject(entity);
+		//3.保存角色菜单关系数据
+		sysRoleMenuDao.insertObjects(entity.getId(), menuIds);
+		//4.返回业务结果
+		return rows;
+	}
+6.2.4	Controller类定义
+	业务描述与设计实现
+接收客户端提交的菜单数据，并对其进行封装，然后调用业务层对象进行业务处理，最后将业务层处理结果响应到客户端。
+	关键代码设计与实现
+定义Controller方法，借助此方法处理保存角色数据请求和响应逻辑。关键代码如下：
+@RequestMapping("doSaveObject")
+@ResponseBody
+public JsonResult doSaveObject(
+    		SysRole entity,Integer[] menuIds){
+    	    sysRoleService.saveObject(entity,menuIds);
+return new JsonResult("save ok");    
+}
+6.1	客户端关键业务及代码实现
+6.1.1	页面cancel按钮事件处理
+	业务描述与设计实现
+点击页面cancel按钮时，加载菜单那列表页面。
+	关键代码设计与实现
+第一步：事件注册（页面加载完成以后）
+  $(".box-footer")
+	  .on("click",".btn-cancel",doCancel)
+第二步：事件处理函数定义
+  function doCancel(){
+	var url="role/role_list";
+	$("#mainContentId").load(url);  
+  }
+
+6.1.1	页面Save按钮事件处理
+	业务描述与设计实现
+点击页面save按钮时，将页面上输入的菜单信息提交到服务端。
+	关键代码设计与实现
+第一步：事件注册（页面加载完成以后）。
+  $(".box-footer")
+	  .on("click",".btn-save",doSaveOrUpdate)
+第二步：Save按钮事件处理函数定义。关键代码如下：
+function doSaveOrUpdate(){
+	  //1.获取表单数据
+	  var params=doGetEditFormData();	  
+	  //2.异步提交表单数据
+	  var insertUrl="role/doSaveObject";
+	  $.post(insertUrl,params,function(result){
+		  if(result.state==1){
+			  alert(result.message);
+			  doCancel();
+		  }else{
+			  alert(result.message);
+		  }
+	  });
+  }
+第三步：表单数据获取及封装函数定义。关键代码如下：
+//获取表单数据
+    function doGetEditFormData(){
+    	var params={
+    		name:$("#nameId").val(),
+    		note:$("#noteId").val()
+    	}
+    	//获取选中的node节点
+    	var menuIds=[];
+    	var checkedNodes=zTree.getCheckedNodes(true);//zTree
+    	for(var i in checkedNodes){
+        console.log(checkedNodes[i]);
+    		menuIds.push(checkedNodes[i].id)
+    	}
+    	params.menuIds=menuIds.toString();//(1,2,3,4,5)
+    	return params;
+    }
+
+7	角色修改页面数据呈现
+7.1	服务端关键业务及代码实现
+核心业务：在角色列表页面点击修改按钮时,基于id进行角色信息的查询,在查询角色信息时将角色信息与对应的菜单关系数据封装到到一个值对象，然后传递到客户端在修改页面进行呈现。
+
+ 
+7.1.1	VO定义
+	业务描述及设计实现
+构建值对象（VO），用于封装从数据库查询到的角色菜单记录，并添加对应的set/get/toString等方法，便于对数据进行更好的操作。
+	关键代码分析及实现
+package com.cy.pj.sys.vo;
+import java.util.List;
+import com.cy.pj.sys.entity.SysRole;
+/**
+ * VO：通过此对象封装角色以及角色对应的菜单id
+ * @author ta
+ */
+public class SysRoleMenuVo implements Serializable{
+private static final long serialVersionUID = 3609240922718345518L;
+/**角色id*/
+	private Integer id;
+	/**角色名称*/
+	private String name;
+/**角色备注*/
+	private String note;
+	/**角色对应的菜单id*/
+	private List<Integer> menuIds;
+public Integer getId() {
+		return id;
+	}
+	public void setId(Integer id) {
+		this.id= id;
+	}	
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+public String getNote() {
+		return note;
+	}
+	public void setName(String note) {
+		this.note = note;
+	}
+
+	public List<Integer> getMenuIds() {
+		return menuIds;
+	}
+	public void setMenuIds(List<Integer> menuIds) {
+		this.menuIds = menuIds;
+	}
+}
+7.1.2	DAO接口定义
+	业务描述与设计实现
+负责基于id执行角色数据的查询操作。
+	关键代码设计与实现
+在SysRoleDao接口中定义数据持久化方法：
+SysRoleMenuVo findObjectById(Integer id);
+7.1.3	Mapper文件定义
+	业务描述与设计实现
+基于SysRoleDao中findObjectById方法的定义，在映射文件中添加对应的角色查询元素。
+	关键代码设计与实现
+第一步：在SysRoleMapper.xml中添加findObjectById元素，关键代码如下：
+   <select id="findObjectById"
+           resultMap="sysRoleMenuVo">
+           select id,name,note
+           from sys_roles
+           where id=#{id}        
+   </select>
+第二步：在SysRoleMapper.xml中添加第一步中resultMap属性定义的结果映射元素，关键代码如下：
+   <!-- resultMap一般用于自定义映射或一些关联查询中 -->
+   <resultMap type="com.cy.pj.sys.vo.SysRoleMenuVo" 
+              id="sysRoleMenuVo">
+        <!-- 假如基于id做关联查询，又希望将id值存储到值对象，
+                           可以对id进行专门映射 -->
+        <id property="id" column="id"/>
+        <!-- collection一般应用于one2many查询 -->
+        <collection property="menuIds"
+                    .
+select="com.cy.pj.sys.dao.SysRoleMenuDao.findMenuIdsByRoleId"
+                    column="id">
+        </collection>
+   </resultMap>
+第三步：在SysRoleMenuMapper.xml中添加第二步中collection元素内部select属性对应的查询元素。关键代码如下：
+  <select id="findMenuIdsByRoleId"
+              resultType="int">
+            select menu_id
+            from sys_role_menus
+            where role_id=#{id} 
+  </select>
+7.1.4	Service接口定义及实现
+	业务描述与设计实现
+基于控制层请求，调用数据层方法，查询对应的角色及相关信息。
+	关键代码设计与实现
+第一步：在SysRoleService接口中，添加基于id查询对应角色及相关信息的方法。关键代码如下：
+SysRoleMenuVo findObjectById(Integer id) ;
+第二步：在SysRoleService接口对应的实现类SysRoleServiceImpl中添加findObjectById的具体实现。关键代码如下：
+@Override
+    public SysRoleMenuVo findObjectById(Integer id) {
+    	//1.合法性验证
+    	if(id==null||id<=0)
+    	throw new ServiceException("id的值不合法");
+    	//2.执行查询
+    	SysRoleMenuVo result=sysRoleDao.findObjectById(id);
+  	//3.验证结果并返回
+    	if(result==null)
+    	throw new ServiceException("此记录已经不存在");
+    	return result;
+    }
+7.1.5	Controller类定义
+	业务描述与设计实现
+基于控制层请求，调用数据层方法，查询对应的角色及相关信息。
+	关键代码设计与实现
+在SysRoleController类中定义基于角色ID查询角色的方法。关键代码如下：
+@RequestMapping("doFindObjectById")
+@ResponseBody
+ public JsonResult doFindObjectById(Integer id){
+    	return new JsonResult(sysRoleService.findObjectById(id));
+ }
+
+7.2	客户端关键业务及代码实现
+7.2.1	列表页面修改按钮事件处理
+	业务描述与设计实现
+在角色修改按钮上进行事件注册，点击页面修改按钮时，基于角色id向服务端发起异步请求获取角色相关数据，然后加载修改页面。
+	关键代码设计与实现
+第一步：页面加载完成，进行修改按钮事件注册，关键代码如下：
+$(function(){
+      …
+	  //假如是修改
+		$(".input-group-btn")
+.on("click","btn-update",doLoadEditUI);
+  });
+第二步：修改按钮事件处理函数定义或修改，关键代码如下：
+function doLoadEditUI(){
+	  //定义页面标题(内容可能是添加角色也可能是修改角色)
+	  var title;
+	  //判定要执行的操作(是添加还是修改)
+	  if($(this).hasClass("btn-add")){
+		title="添加角色"; 
+		doLoadPageUI(title);
+	  }else{
+		title="修改角色";
+		//获取当前行的id值
+		var id=$(this).parents("tr").data("id");
+		//根据id查找记录，判定记录是否存在
+		var url="role/doFindObjectById";
+		var data={"id":id};
+		$.getJSON(url,data,function(result){
+			if(result.state==1){
+			$("#mainContentId").data("data",result.data)
+			loadPageUI(title);
+			}else{
+			 alert(result.message);
+			}
+		});
+	  }
+}   
+第三步：定义或修改加载编辑页面的方法。关键代码如下：
+   function doLoadPageUI(title){
+	   $("#mainContentId")
+		  .load("role/role_edit",function(){
+			  $(".box-title").html(title);
+	   }); 
+   }
+
+7.2.2	编辑页面菜单数据呈现
+	业务描述与设计实现
+页面加载完成，获取编辑页面数据，然后在页面指定位置进行数据呈现数据。
+	关键代码设计与实现
+第一步：在角色编辑页面中，菜单数据加载完成以后，获取角色编辑页面中需要的表单数据，然后进行页面数据初始化。关键代码如下：
+function doLoadSysMenus(){
+    	var url="menu/doFindZTreeNodes"
+    	$.getJSON(url,function(result){
+    		if(result.state==1){
+    		zTree=$.fn.zTree.init(
+    		$("#menuTree"),setting,result.data);
+    		var data=$("#mainContentId").data("data");
+        	if(data){
+        		doInitEditFormData(data);
+        	}
+    		}else{
+    		alert(result.message);
+    		}
+    	})
+}
+第三步：定义编辑页面数据初始化方法。关键代码如下：
+function doInitEditFormData(data){
+    	$("#nameId").val(data.name);
+    	$("#noteId").val(data.note);
+    	//展开所有节点
+	zTree.expandAll(true);
+	//勾选角色所拥有的菜单
+	var menuIds = data.menuIds;
+	for(var i=0; i<menuIds.length; i++) {
+			//获取key为id值为menuIds[i]的节点
+			var node = zTree.getNodeByParam("id",menuIds[i]);
+			//选中当前节点
+			zTree.checkNode(node,true,false);
+	 }
+    }
+
+8	角色数据更新实现
+8.1	服务端关键业务及代码实现
+8.1.1	DAO接口实现
+	业务描述与设计实现
+获取角色编辑页面数据，然后异步提交到服务端，将角色信息以及角色对应的菜单关系数据更新到数据库。
+	关键代码设计与实现
+在SysRoleDao接口中添加数据更新方法，关键代码如下：
+int updateObject(SysRole entity);
+8.1.2	Mapper文件定义
+	业务描述与设计实现
+基于SysRoleDao中updateObject方法的定义，编写用于实现角色更新的SQL元素。
+	关键代码设计与实现
+在SysRoleMapper.xml中添加updateObject元素，用于更新菜单信息。关键代码如下：
+<update id="updateObject"
+            parameterType="com.cy.pj.sys.entity.SysRole">
+         update sys_roles
+         set
+           name=#{name},
+           note=#{note},
+           modifiedUser=#{modifiedUser},
+           modifiedTime=now()
+        where id=#{id}
+    </update>
+8.1.3	Service接口及实现
+	业务描述与设计实现
+基于控制层请求，对数据进行校验并调用数据层对象将角色信息以及角色菜单关系数据更新到数据库中。
+	关键代码设计与实现
+第一步：在SysRoleService接口中，添加用于更新角色对象的方法。关键代码如下：
+int updateObject(SysRole entity,Integer[] menuIds)
+第二步：在SysRoleServiceImpl类中，实现更新角色操作。关键代码如下：
+@Override
+public int updateObject(SysRole entity,Integer[] menuIds) {
+    	//1.合法性验证
+    	if(entity==null)
+        throw new ServiceException("更新的对象不能为空");
+    	if(entity.getId()==null)
+    	throw new ServiceException("id的值不能为空");
+    	
+    	if(StringUtils.isEmpty(entity.getName()))
+    	throw new ServiceException("角色名不能为空");
+    	if(menuIds==null||menuIds.length==0)
+    	throw new ServiceException("必须为角色指定一个权限");
+    	
+    	//2.更新数据
+    	int rows=sysRoleDao.updateObject(entity);
+    	if(rows==0)
+        throw new ServiceException("对象可能已经不存在");
+    	sysRoleMenuDao.deleteObjectsByRoleId(entity.getId());
+    	sysRoleMenuDao.insertObject(entity.getId(),menuIds);
+    	//3.返回结果
+    	return rows;
+  }
+
+8.1.4	Controller类定义
+	业务描述与设计实现
+首先接收客户端提交的角色数据，并对其进行封装，然后调用业务层对象对角色信息进行更行更新，最后将业务层处理结果响应到客户端。
+	关键代码设计与实现
+在SysRoleController类中定义更新角色的方法。关键代码如下：
+@RequestMapping("doUpdateObject")
+public JsonResult doUpdateObject(SysRole entity,
+String menuIds){
+		  sysRoleService.updateObject(entity,menuIds);
+ return new JsonResult("update ok");
+8.2	客户端关键业务及代码实现
+8.2.1	编辑页面更新按钮事件处理
+	业务描述与设计实现
+点击页面save按钮时，将页面上输入的角色编辑信息提交到服务端。
+	关键代码设计与实现
+第一步：在角色编辑页面中定义获取角色编辑页面表单数据的函数，关键代码如下：
+ function doSaveOrUpdate(){
+	  //1.获取表单数据
+	  var params=doGetEditFormData();
+var rowData=$("#mainContentId").data("rowData");
+	  //2.定义url
+	  var insertUrl="menu/doSaveObject";
+	  var updateUrl="menu/doUpdateObject";
+	  var url=rowData?updateUrl:insertUrl;
+	  if(rowData)params.id=rowData.id;
+	  //3.异步提交数据
+	  $.post(url,params,function(result){
+		  if(result.state==1){
+			  alert(result.message);
+			  doCancel();
+		  }else{
+			  alert(result.message);
+		  }
+	  });
+  }
+第二步：定义或修改提交编辑页面表单数据方法，关键代码如下：
+//点击保存按钮时执行此方法
+    function doSaveOrUpdate(){//insert/update
+    	//获取表单数据
+    	var params=doGetEditFormData();
+        //假如当前页面.container-fluid对象上绑定着值说明是修改
+    	var data=$("#mainContentId").data("data");
+    	if(data){
+    		params.id=data.id;//修改时表单数据中需要添加id
+    	}
+    	//根据当前页面上是否绑定着值来定义url
+    	var insertUrl="role/doSaveObject";
+    	var updateUrl="role/doUpdateObject";
+    	var url=data?updateUrl:insertUrl;
+    	
+    	//异步提交数据
+    	$.post(url,params,function(result){
+    		if(result.state==1){
+    		alert(result.message);
+    		doCancel();
+    		}else{
+    		alert(result.message);
+    		}
+    	})
+    }
+
+9	总结
+9.1	重难点分析
+	一对多数据的保存?(保存角色的同时也要保存角色和菜单的关系数据)
+	一对多数据的查询映射?(基于查询id查询角色信息将对应的菜单信息也查询出来)
+	角色信息的删除,添加,修改的业务实现?
+9.2	FAQ分析
+	角色与菜单之间是什么关系？
+	描述一下角色删除业务的实现？
+	描述一下角色添加业务的实现？
+	描述一下角色更新业务的实现？
+9.3	BUG分析
+	视图解析问题:
+
+ 
+
+问题分析:
+1)	检查对应的方法上是否添加@ResponseBody注解
+2)	检查控制层对象方法的映射路径配置是否正确

@@ -1,0 +1,286 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">草稿箱</h3>
+
+				<div class="box-tools">
+					<div class="input-group input-group-sm" style="width: 350px;">
+						<!-- <input type="text" name="table_search" id="searchNameId"
+							class="form-control pull-right" placeholder="用户名"> -->
+
+						<div class="input-group-btn">
+							<!-- <button type="button" class="btn btn-default btn-search">
+                                <i class="fa fa-search"></i>
+							</button> -->
+							<button type="button" class="btn btn-default btn-add" style="float:right">添加</button>
+							<button type="button" class="btn btn-default btn-delete" style="float:right">删除</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<table class="table table-hover">
+					<thead>
+						<tr>
+						    <th><input type="checkbox" id="checkAll">全选</th>
+							<th>文件名</th>
+							<th>作者</th>
+							<th>最后更新时间</th>
+							<th>状态</th>
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody id="tbodyId">
+					    <tr>
+					       <td colspan="7">数据正在加载中...</td>
+					    </tr>
+					</tbody>
+				</table>
+			</div>
+			<div id="pageId" class="box-footer clearfix">
+			      
+			</div>
+			<!-- /.box-body -->
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+<script type="text/javascript">
+	$(function(){
+		//const 关键字用于定义常量,常量不允许多次赋值
+		//const pageUrl="doPageUI";
+		//在pageId对应的位置异步加载pageUrl对应的资源
+		//资源加载完成执行doGetObjects函数
+		//向服务端发异步请求加载数据
+		//$("#pageId").load(pageUrl,doGetObjects)
+		doGetObjects();
+		//查询按钮注册事件
+		$(".input-group-btn")
+		//.on("click",".btn-search",doQueryObjects)
+		//删除按钮注册事件
+		.on("click",".btn-delete",doDeleteObjects)
+		//添加按钮注册事件
+		.on("click",".btn-add",doLoadEditUI)
+		
+		//全选按钮注册事件
+		$("#checkAll").change(doChangeTBodyCheckBoxState);
+		//.on("click","#checkAll",doChangeTBodyCheckBoxState)
+		
+		$("#tbodyId").on("change",".cBox",doChangeTHeadCheckBoxState)
+					 .on("click",".btn-commit",doCommitById)
+					 .on("click",".btn-update",doLoadEditUI)
+					 .on("click",".readfile",doReadFile)
+	});
+	/*在线查阅文件*/
+	function doReadFile(){
+		var rowData=$(this).parents("tr").data("rowData");
+		console.log(rowData)
+		var params={"id":rowData.id,
+					"statusId":rowData.statusId};
+		var params2={"name":rowData.name};
+		var url="files/doFindObjectById";
+		$.post(url,params,function(result){
+			if(result.state==1){
+				console.log(result);
+				doLoadReadUI(params2.name,result.file);//异步加载页面  
+			}else{
+				alert(result.message); 
+			}
+		});
+	}
+	function doLoadReadUI(title,file){
+		var url="files/file_view";
+		$("#mainContentId").load(url,title,function() {
+			$(".box-title").html(title);
+			var str=file.content.replace(/\n/g,"<br>")
+			$(".col-sm-11").html(str);
+			$("#createdUser").html("作者:    "+file.createdUser);
+			$("#reviewUser").html("审核者:    "+file.reviewUser);
+			$("#release_time").html("创建时间:    "+new Date(file.releaseTime).toLocaleString());
+			$("#update_time").html("更新于    "+new Date(file.updateTime).toLocaleString());
+		}) 
+	}
+	/*提交文件*/
+	function doCommitById(){
+		var rowData=$(this).parents("tr").data("rowData");
+		var id=rowData.id;
+		//console.log(id);
+		if(!confirm("确认提交吗?")) return;
+		var params={"id":rowData.id};
+		var url = "files/doUpdateCommit";
+		$.post(url,params,function(result){
+			if(result.state==1){
+	    		alert(result.message);
+	    		doGetObjects();//重新查询刷新
+	    	}else{
+	    		alert(result.message);
+	    	}
+		});
+	}
+	/*加载添加或编辑*/
+	function doLoadEditUI() {
+		var title;
+		if ($(this).hasClass('btn-add')) {
+			title = "添加文件";
+			doLoadPageUI(title);
+		} else {
+			title = "编辑文件"
+			var rowData=$(this).parents("tr").data("rowData");
+			var params = {
+				"id" : rowData.id,
+				"statusId":rowData.statusId
+			};
+			console.log(params)
+			var url="files/doFindObjectById";
+			$.post(url,params,function(result){
+				if(result.state==1){
+					result.file.id=rowData.id;//在结果中动态追加id
+					$("#mainContentId").data("data",result.file);
+					doLoadPageUI(title,result.file);//异步加载页面  
+				}else{
+					alert(result.message); 
+				}
+			});
+		} 
+	}
+	/*加载文件内容*/
+	function doLoadPageUI(title,file) {
+		var url = "files/file_edit"
+		$("#mainContentId").load(url, function() {
+			$(".box-title").html(title);
+			$("#nameId").val(file.name);
+	    	$("#noteId").val(file.content);
+		})
+	}
+	//修改thead中checkbox对象的状态
+	function doChangeTHeadCheckBoxState(){
+		//1.定义变量flag,并给定初始化值为true
+		var flag=true;
+		//2.获得所有tbody中checkbox对象状态,并进行逻辑与操作
+		$("#tbodyId input[type=checkbox]")
+		.each(function(){
+			flag=flag & $(this).prop("checked");
+		})
+		//3.修改全选元素checkbox的值为flag
+		$("#checkAll").prop("checked",flag);
+	}
+	
+	/**设置tbody中checkbox对象的状态*/
+	function doChangeTBodyCheckBoxState(){
+		//1.获取thead中checkAll对象的状态
+		var flag=$(this).prop("checked");
+		//2.修改tbody中的checkbox对象状态
+		$("#tbodyId input[type=checkbox]")
+		.prop("checked",flag);
+	}
+	
+	
+	/**处理删除事件*/
+	function doGetCheckedIds(){
+		//1.定义数组
+		var idArray=[];
+		//2.获取tbody中选中checkbox对象的值
+		$("#tbodyId input[type=checkbox]").each(function(){//发现checkbox则回调此函数
+			if($(this).prop("checked")){
+				idArray.push($(this).val())
+			}
+		})
+		//返回数组
+		return idArray;
+	}
+	function doDeleteObjects(){
+		//debugger
+		//1.获取用户选中的记录id,并进行校验
+		var idArray=doGetCheckedIds();
+		if(idArray.length==0){
+			alert("请选择删除对象")
+			return;
+		}
+		//2.给出提示"确认删除吗?"
+		if(!confirm("确认删除吗?"))return;
+		//3.发送异步请求执行删除操作
+		//3.1请求参数
+		var params={"ids":idArray.toString()};
+		//3.2请求的url
+		var url="files/doDeleteObjects";
+		//3.3发送异步请求
+		$.post(url,params,function(result){
+			if(result.state==1){
+				alert("删除成功!");
+				doQueryObjects();
+				doRefreshPageAfterDelete();
+			}else{
+				alert(result.message);
+			}
+		})
+	}
+	
+	/**处理查询事件*/
+	function doQueryObjects(){
+		//1.初始化查询页面为1
+		$("#pageId").data("pageCurrent",1);
+		//2.调用doGetObjects函数
+		doGetObjects();
+	}
+	
+	/**向服务器发起请求获取日志信息*/
+	function doGetObjects(){
+		//2.请求url
+		var url="files/doFindObjectByUnsub";
+		//3.发送异步请求并处理请求结果
+		//getJSON为jquery中的一个ajax函数
+		//getJSON基于ajax的xhr对象向服务端发异步请求
+		//getJSON函数将服务端的响应结果转化为JSON格式JS对象
+		//getJSON函数最后会将响应结果传递给callback函数
+		$.getJSON(url,doHandleResponseResult);
+	}
+	
+	function doHandleResponseResult(result){
+		//debugger
+		console.log("result",result);//jsonResult
+		if(result.state==1){//ok
+			//1.初始化页面上日志记录
+			doSetTableBodyRow(result.data);
+			//2.初始化分页页面上的分分页信息
+			//doSetPagination(result.data); 
+		}else{//error
+			alert(result.message);
+		}		
+	}
+	function doSetTableBodyRow(data){
+		
+		//1.获取tBody对象并清空
+		var tBody=$("#tbodyId");
+		tBody.empty();//清空内容
+		for(var i in data){
+			  var tr=$("<tr></tr>");
+			  tr.data("rowData",data[i]);
+			  var tds=doCreateTds(data[i]);
+			  tr.append(tds);
+			  tBody.append(tr);
+		  }
+	}
+	function doCreateTds(row){
+		var message = 
+			row.statusId==2?
+			"<p style='color:white; text-align:center;"
+			+"background:gray; font-size:15px'>"+"未提交":
+			"<p style='color:white; text-align:center;" 
+			+"background:red; font-size:15px'>"+"审核未过";
+		console.log("rows",row);
+		var tds="<td><input type='checkbox' class='cBox' value='"+row.id+"'></td>"+
+			    "<td><a href='#' class='readfile'>"+row.name+"</a></td>"+
+			    "<td>"+row.createdUser+"</td>"+
+			    "<td>"+new Date(row.updateTime).toLocaleString()+"</td>"+
+			    "<td value='"+row.statusId+"'>"+message+"</td>"+
+			    "<td><a class='btn-update'>编辑</a></td>"+
+			    "<td><a class='btn-commit'>提交</a></td>";
+		return tds;
+	}
+	
+</script>
+
+
+

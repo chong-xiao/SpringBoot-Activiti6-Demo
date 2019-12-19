@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.NoticeDao">
+	<sql id="queryWhereId">
+		<where>
+			<if test="title!=null and title!=''">
+				title like concat("%",#{title},"%")
+			</if>
+		</where>
+	</sql>
+	<select id="getRowCount" resultType="int">
+		select count(*) from cazj_notice
+		<include refid="queryWhereId"/>
+	</select>
+	<select id="findPageObjects" resultType="com.cazj.pojo.Notice">
+		select n.*,e.empname,d.name
+		from cazj_notice as n 
+		inner join cazj_emp as e 
+		on(n.empId=e.id) 
+		inner join cazj_dept as d 
+		on(d.id=e.deptId)
+		<include refid="queryWhereId"/>
+		order by n.noticeTime desc 
+		limit #{startIndex},#{pageSize}
+	</select>
+	<select id="findMaxIdNotice" resultType="com.cazj.pojo.Notice">
+		select n.*,e.empname,d.name
+		from cazj_notice as n 
+		inner join cazj_emp as e 
+		on(n.empId=e.id) 
+		inner join cazj_dept as d 
+		on(d.id=e.deptId) 
+		where n.noticeTime in (select max(noticeTime) from cazj_notice)
+	</select>
+	<select id="getAllCount" resultType="int">
+		select count(*) from cazj_notice
+	</select>
+	<select id="findNoticeById" resultType="com.cazj.pojo.Notice">
+		select content from cazj_notice where id=#{id}
+	</select>
+	<delete id="deleteNoticeById">
+		delete from cazj_notice where id = #{id}
+	</delete>
+	
+	<!-- 通知添加-->
+	<insert id="insertNotice" parameterType="com.cazj.pojo.Notice" useGeneratedKeys="true" keyProperty="id">
+		insert into cazj_notice
+		(type,content,title,modifyTime,noticeTime,empId)
+		values
+		(#{type},#{content},#{title},now(),now(),#{empId})
+	</insert>
+	
+	<!-- 修改 -->
+	<select id="findObjectById" resultType="com.cazj.pojo.Notice">
+		select id,title,type,content from cazj_notice
+		where id=#{id}
+	</select>
+
+	
+	<update id="updateObject" >
+		update cazj_notice
+		set
+		title=#{title},
+		type=#{type},
+		content=#{content}
+		where id=#{id}
+	</update>
+	
+	
+	
+	
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

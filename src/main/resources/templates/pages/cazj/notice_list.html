@@ -1,0 +1,224 @@
+<div class="row">
+	<div class="col-xs-12">
+		<div class="box">
+			<div class="box-header">
+				<h3 class="box-title">公告管理</h3>
+				<a href="#" id="lalala" class="label label-success" style="padding: 5px;margin-left: 5px;">
+					<!-- <span class="glyphincon glyphicon-refresh">
+					</span> -->
+					刷新
+				</a>
+				<div class="box-tools">
+					<div class="input-group input-group-sm" style="width: 350px;">
+						<input type="text" name="table_search" id="searchNameId"
+							class="form-control pull-right" placeholder="通告标题">
+
+						<div class="input-group-btn">
+							<button type="button" class="btn btn-default btn-search">
+                                <i class="fa fa-search"></i>
+							</button>
+							<button type="button" class="btn btn-default btn-add">添加</button>
+							<button type="button" class="btn btn-default btn-update">修改</button>
+							<button type="button" class="btn btn-default btn-delete">删除</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /.box-header -->
+			<div class="box-body table-responsive no-padding">
+				<table class="table table-hover">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>通告类型</th>
+							<th>通告标题</th>
+							<th>发布人</th>
+							<th>部门</th>
+							<th>发布时间</th>
+							<th>操作</th>
+						</tr>
+					</thead>
+					<tbody id="tbodyId"></tbody>
+				</table>
+			</div>
+			<div id="pageId" class="box-footer clearfix">
+			</div>
+			<!-- /.box-body -->
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="myModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">公告内容</h4>
+      </div>
+      <div class="modal-body">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<script type="text/javascript">
+$(function() {
+doLoadUI("lalala","notice/notice_list")
+})
+
+ function doLoadUI(id, url) {
+        $("#" + id).click(function() { //callback
+            $("#mainContentId").load(url);
+        });
+    }
+
+   $(function(){
+	    $("#pageId").load("doPageUI",doGetObjects)
+		$(".input-group-btn").on("click",".btn-search",doQueryObjects);
+	    $(".input-group-btn").on("click",".btn-add,.btn-update",doLoadEditUI);
+	    $("#tbodyId").on("click",".btn-lg",doFindNoticeById);
+	    $(".input-group-btn").on("click",".btn-delete",doDeleteNoticeById);
+   });
+   function doLoadEditUI(){
+	   //1.判定点击的对象
+	   var title;
+	   if($(this).hasClass("btn-add")){
+		   title="添加公告";
+		   doLoadPage(title);
+	   }else if($(this).hasClass("btn-update")){
+		   title="修改公告";
+		   var id=$("tbody input[name='radioId']:checked").val();
+		   console.log("id="+id)
+		   if(!id){
+			  alert("请先选择");
+			  return;
+		   }
+		   //基于id进行查询并加载编辑页面
+		   doFindObjectById(id,title);
+	   }
+   }
+   function doFindObjectById(id,title){
+	   //1.params
+	   var params={"id":id};
+	  
+	   //2.url
+	   var url="notice/doFindObjectById";
+	   //3.ajax request
+	   $.getJSON(url,params,function(result){//JsonResult
+		   if(result.state==1){	
+			  $("#mainContentId").data("rowData",result.data); 
+	          doLoadPage(title);
+		   }else{
+			   debugger
+			  alert(result.message);
+		   }
+	   });
+   }
+   
+   
+   function doLoadPage(title){
+	   var url="notice/notice_edit"
+	   $("#mainContentId").load(url,function(){
+		   $(".box-title").html(title);
+	   }) 
+   }
+   
+   function doQueryObjects(){
+	   $("#pageId").data("pageCurrent",1);
+	   doGetObjects();
+   }
+   
+   function doGetObjects(){
+		var url = "notice/doFindPageObjects";
+		var pageCurrent=$("#pageId").data("pageCurrent");
+		if(!pageCurrent)pageCurrent=1;
+		var params = {"pageCurrent":pageCurrent};
+		var title = $("#searchNameId").val();
+		if(title) params.title=title;
+		$.getJSON(url,params,function(result){
+			doHandleResponseResult(result);
+		});
+   }
+   function doHandleResponseResult(result){
+	   if(result.state==1){
+		   doSetTableBodyRows(result.data.records);
+		   doSetPagination(result.data);
+	   }else{
+		   alert(result.message);
+	   }
+   }
+   function doSetTableBodyRows(records){
+	   //1.获取tbody对象，并清空对象
+	   var tBody=$("#tbodyId");
+	   tBody.empty();
+	   //2.迭代records记录，并将其内容追加到tbody
+	   for(var i in records){
+		   //2.1 构建tr对象
+		   var tr=$("<tr></tr>");
+		   tr.data("id",records[i].id);
+		   //2.2 构建tds对象
+		   var tds=doCreateTds(records[i]);
+		   //2.3 将tds追加到tr中
+		   tr.append(tds);
+		   //2.4 将tr追加到tbody中
+		   tBody.append(tr);
+	   }
+   }
+   function doCreateTds(row,i){
+	   var tds=
+		"<td><input type='radio' name='radioId' value='"+row.id+"'></td>"+   
+	   "<td>"+row.type+"</td>"+
+       "<td>"+row.title+"</td>"+
+       "<td>"+row.empname+"</td>"+
+       "<td>"+row.name+"</td>"+
+       "<td>"+new Date(row.noticeTime).toLocaleString()+"</td>"+
+       "<td><button class='btn btn-primary btn-lg' data-toggle='modal' data-target='#myModal1'>查看</button></td>";
+       return tds;
+	}
+   function doFindNoticeById(){
+	   var id = $(this).parents("tr").data("id");
+	   var params = {"id":id};
+	   var url = "notice/doFindNoticeById";
+	   debugger
+	   $.post(url,params,function(result){
+		   $(".modal-body").html(result.data.content);
+	   });
+   }
+  function doDeleteNoticeById(){
+	  var id = $("#tbodyId input[type='radio']").val();
+	  if(id==0){
+		  alert("请选择一个");
+		  return;
+	  }
+	  if(!confirm("确定删除吗"))return;
+	  var url = "notice/doDeleteNoticeById";
+	  var params = {"id":id}
+	  $.post(url,params,function(result){
+		  if(result.state==1){
+			  alert(result.message);
+			  doGetObjects();
+		  }else{
+			  alert(result.message);
+		  }
+	  });
+  }
+  /* function doRefreshPage(){
+ 	 var pageCount=$("#pageId").data("pageCount");
+ 	 var pageCurrent=$("#pageId").data("pageCurrent");
+ 	 var checked=$("#checkAll").prop("checked");
+ 	 if(pageCurrent==pageCount&&checked&&pageCurrent>1){
+ 		 pageCurrent--;
+ 		 $("#pageId").data("pageCurrent",pageCurrent);
+ 	 }
+      doGetObjects();
+	} */
+
+
+</script>
+
+
+
+

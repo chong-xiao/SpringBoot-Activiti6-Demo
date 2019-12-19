@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.EmpDao">
+	<!-- 修改密码 -->
+	<update id="updatePassword">
+		update cazj_emp
+		set password=#{password},
+		salt=#{salt},
+		modifiedTime=now()
+		where id=#{id}
+	</update>
+	<!-- 根据id查员工数据 -->
+	<select id="findEmpById" resultMap="empDeptVo" parameterType="int">
+		select * from cazj_emp
+		where id=#{id} 
+	</select>
+	<resultMap type="com.cazj.common.vo.EmpDeptVo" id="empDeptVo" >
+		<!-- 一般应用于many2one或one2one做关联查询 在当前应用是基于deptId查询部门信息并将其 存储到EmpDeptVo对象的Dept属性中。 -->
+		<association property="dept" column="deptId" 
+			select="com.cazj.dao.DeptDao.findDeptById">
+		</association>
+	</resultMap>
+	<!-- 修改员工档案 -->
+	<update id="updateEmp"
+		parameterType="com.cazj.pojo.Emp">
+		update cazj_emp
+		set empname=#{empName},
+		phone=#{phone},
+		email=#{email},
+		deptId=#{deptId},
+		modifiedTime=now(),
+		modifiedName=#{modifiedName},
+		addr=#{addr},
+		cardId=#{cardId}
+		where id=#{id}
+	</update>
+	<!-- 录入员工档案 -->
+	<insert id="addEmp" parameterType="com.cazj.pojo.Emp" useGeneratedKeys="true" keyProperty="id">
+		insert into cazj_emp
+		(empname,password,deptId,email,phone,salt,valid,
+		createdTime,modifiedTime,createdName,modifiedName,addr,entryTime,cardId)
+		values
+		(#{empName},#{password},#{deptId},#{email},#{phone},#{salt},#{valid},
+		now(),now(),#{createdName},#{modifiedName},#{addr},now(),#{cardId})
+	</insert>
+	
+	<!-- sql映射 -->
+	<!-- <resultMap type="com.cazj.common.vo.EmpDeptVo" id="empDeptVo">
+		<association property="dept" column="deptId" select="com.cazj.dao.DeptDao.findDeptById">
+		</association>
+	</resultMap> -->
+	<sql id="queryWhereId">
+		from cazj_emp
+		<if test="empName != null and empName != ''">
+			<where>
+				empName like concat("%",#{empName},"%")		
+			</where>
+		</if>
+	</sql>
+	<!-- 分页查询 -->
+	<select id="findPageEmp" resultMap="empDeptVo" >	
+		select *  
+		<include refid="queryWhereId" />
+		order by createdTime desc
+		limit #{startIndex},#{pageSize}
+	</select>
+	<!-- 获取总记录数 -->
+	<select id="getRowCount" resultType="int" >
+		select count(*)
+		<include refid="queryWhereId" />
+	</select>
+	<!-- 禁用 -->
+	<update id="validById">
+       update cazj_emp
+       set valid=#{valid},
+           modifiedName=#{modifiedName},
+           modifiedTime=now()
+       where id=#{id}
+   </update>
+	
+	<!-- 通过员工性员，用parentId关联查询，获到该员工上级领导的对象 -->
+	
+	<select id="findEmpManagerByEmpName" resultType="com.cazj.pojo.Emp">
+		select b.* from cazj_emp a LEFT JOIN cazj_emp b on a.parentId=b.id where a.empname=#{empName};
+	</select>
+</mapper>

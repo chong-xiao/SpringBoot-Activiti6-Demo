@@ -1,0 +1,83 @@
+
+1	AJAX简介
+1.1	Ajax 是什么
+Ajax 是一种Web应用技术,可以借助客户端脚本(javascript)与服务端应用进行异步通讯，获取服务端数据以后可以进行局部刷新。进而提高数据的响应和渲染速度。
+1.2	Ajax 应用场景
+Ajax技术最大的优势就是底层异步,然后局部刷新,进而提高用户体验,这种技术现在在很多项目中都有很好的应用,例如:
+	电商系统。
+	评价系统。
+	地图系统。
+1.3	Ajax 应用模型分析
+所有的Ajax 请求都会基于DOM事件，通过XHR（XMLHttpRequest）对象实现与服务端异步通讯局部更新。
+ 
+2	AJAX基本应用
+2.1	Ajax编程步骤
+第一步:注册dom(html 元素)事件
+第二步:创建XHR对象并注册监听函数
+第三步:创建与服务端的连接
+第四步:发送异步请求实现与服务端的通讯
+2.2	Ajax编程实现(了解)
+2.2.1	  Ajax Get请求
+基于ajax中XMLHttpRequest对象,向服务端发起异步请求.
+function doAjaxGet(url){
+      //1.构建XHR对象并注册监听
+      var xhr=new XMLHttpRequest();
+      //注册监听函数(监听与服务端通讯过程)
+      xhr.onreadystatechange=function(){//callback
+    	  //readyState==4表示通讯结束
+    	  //status==20 表示服务端响应OK
+    	  if(xhr.readyState==4&&xhr.status==200){
+    		  //responseText表示服务端响应的结果
+    		  console.log(xhr.responseText);    		 
+    	  }
+      }
+      //2.建立连接
+      xhr.open("GET",url,true);//true代表异步
+      //3.发送请求
+      xhr.send(null);//get请求send方法内部不传参数
+}
+
+2.2.2	  Ajax Post请求
+ajax post请求在发送请求执行需要设置请求头,见红色代码部分.
+function doAjaxPost(url,params){
+      //1.构建XHR对象并注册监听
+      var xhr=new XMLHttpRequest();
+      //注册监听函数(监听与服务端通讯过程)
+      xhr.onreadystatechange=function(){//callback
+    	  //readyState==4表示通讯结束
+    	  //status==20 表示服务端响应OK
+    	  if(xhr.readyState==4&&xhr.status==200){
+    		  //responseText表示服务端响应的结果
+    		  console.log(xhr.responseText);    		 
+    	  }
+      }
+      //2.建立连接
+      xhr.open("POST",url,true);//true代表异步
+      xhr.setRequestHeader("Content-Type",
+"application/x-www-form-urlencoded");
+      //3.发送请求
+      xhr.send(params);//get请求send方法内部不传参数
+}
+
+2.3	JQuery中ajax函数的应用
+jquery框架中提供了ajax操作的基本封装,假如希望借助jquery执行ajax请求,可以借助如下相关函数:
+	ajax(…)
+	get(…)
+	getJSON(…)
+	post(…)
+	…
+说明:jquery 中ajax相关函数的语法可参考官网.
+
+3	总结
+3.1	重难点分析
+1.	客户端与服务端通讯时的请求响应模型?
+2.	AJAX的请求模型?
+3.	Ajax编程的基本步骤?
+4.	JQuery框架中ajax函数的基本应用.
+3.2	FAQ分析
+1.	Ajax技术有什么优势,劣势?
+2.	Ajax技术中最核心对象?
+3.	客户端JS问题如何调试?
+3.3	BUG分析
+
+

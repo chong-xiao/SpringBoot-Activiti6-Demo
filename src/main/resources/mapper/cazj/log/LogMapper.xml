@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.LogDao">
+   <insert id="insertObject">
+       insert into cazj_log
+       (empName,operation,method,time,ip,createdTime)
+       values
+       (#{empName},#{operation},#{method},#{time},#{ip},#{createdTime})
+   </insert>
+   
+   <delete id="deleteObjects">
+       delete from cazj_log
+       <!-- 方案1(但是where条件后的in表达式性能比较差)
+       where id in 
+       <foreach collection="ids"
+                open="("
+                close=")"
+                separator=","
+                item="id">
+            #{id}    
+       </foreach>
+        -->
+        <!--方案2 -->
+       <where>
+          <foreach collection="ids"
+                    item="id">
+                  or id=#{id} 
+          </foreach>
+       </where>
+   </delete>
+  
+   <sql id="queryWhereId">
+      from cazj_log
+      <where>
+           <if test="empName!=null and empName!=''">
+              empName like concat("%",#{empName},"%")
+           </if>
+      </where>
+   </sql>
+   
+   <!-- 分页查询当前页记录 -->
+   <select id="findPageObjects"
+           resultType="com.cazj.pojo.CazjLog">
+          select *
+          <include refid="queryWhereId"/>
+          order by createdTime desc
+          limit #{startIndex},#{pageSize}   
+   </select>
+   <!-- 统计记录数 -->
+   <select id="getRowCount"
+           resultType="int">
+        select count(*)
+        <include refid="queryWhereId"/>
+   </select>
+</mapper>
+
+
+
+
+
+
+

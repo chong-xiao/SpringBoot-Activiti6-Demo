@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cazj.dao.MenuDao">
+
+	<!-- 修改菜单信息 -->
+	<update id="updateObject" parameterType="com.cazj.pojo.Menu">
+		update cazj_menu set
+		name=#{name},url=#{url},type=#{type},sort=#{sort},permission=#{permission},
+		parentId=#{parentId},createdTime=now(),modifiedTime=now(),
+		createdName=#{createdName},modifiedName=#{modifiedName}
+		where id=#{id}
+	</update>
+	<!-- 保存菜单信息 -->
+	<insert id="insertObject" parameterType="com.cazj.pojo.Menu">
+		insert into cazj_menu
+		(name,url,type,sort,permission,parentId,createdTime,
+		modifiedTime,createdName,modifiedName)
+		values
+		(#{name},#{url},#{type},#{sort},#{permission},#{parentId},
+		now(),now(),#{createdName},#{modifiedName})
+	</insert>
+	
+	<!-- 删除菜单 -->
+	<delete id="deleteObject">
+		delete from cazj_menu
+		where id=#{id}
+	</delete>
+ 	<!-- 查看子id是否有记录 -->
+	<select id="getChildCount" parameterType="int" resultType="int">
+		select count(*) from cazj_menu
+		where parentId=#{id}
+	</select>
+	
+	<!-- 查找所有菜单树状图 -->
+	<select id="findZTreeNodes" resultType="com.cazj.common.vo.Node">
+		select id, name, parentId from cazj_menu
+	</select>
+
+	  <!-- 在MenuMapper中定义findPermissions元素 (哲)-->
+	  <select id="findPermissions"
+           resultType="string">
+       select permission <!-- sys:user:update -->
+       from cazj_menu
+       where id in 
+       <foreach collection="menuIds"
+                open="("
+                close=")"
+                separator=","
+                item="item">
+            #{item}
+       </foreach>
+     </select>
+	<!-- 查询所有菜单 -->
+	<select id="findAllMenu" resultType="map">
+		select c.*, (select p.name from cazj_menu p
+		where c.parentid=p.id) parentName from cazj_menu c
+	</select>
+
+</mapper>
